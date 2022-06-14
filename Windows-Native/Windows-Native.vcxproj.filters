@@ -1,0 +1,58 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="System">
+      <UniqueIdentifier>{79745512-6588-4f06-83a4-313f9136664b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Registry">
+      <UniqueIdentifier>{6cb0e2ef-5f65-444f-993e-88f46ad1ac1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Process">
+      <UniqueIdentifier>{baaba305-821c-4a39-b475-2cb68593dcef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Native">
+      <UniqueIdentifier>{73c2c5ec-24f4-4967-8832-7f935b965c80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Native\API">
+      <UniqueIdentifier>{a9143c57-e429-4d77-af5f-731df931bebd}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="framework.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="General.h" />
+    <ClInclude Include="System\Registry\Registry.h">
+      <Filter>System\Registry</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Process\Process.h">
+      <Filter>System\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="Native\API\API.h">
+      <Filter>Native\API</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="General.c" />
+    <ClCompile Include="System\Registry\Registry.c">
+      <Filter>System\Registry</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Process\Process.c">
+      <Filter>System\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="Native\API\API.c">
+      <Filter>Native\API</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
+</Project>
