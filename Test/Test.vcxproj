@@ -51,7 +51,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="test.cpp" />
-    <ClCompile Include="Tests\APITest.cpp" />
+    <ClCompile Include="Tests\LibraryTest.cpp" />
     <ClCompile Include="Tests\ProcessTest.cpp" />
   </ItemGroup>
   <ItemGroup>

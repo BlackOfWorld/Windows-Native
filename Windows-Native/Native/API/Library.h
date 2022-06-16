@@ -2,4 +2,4 @@
 #include "General.h"
 void API_Init(void);
 
-extern struct API Api;
+extern struct LIBRARY Library;

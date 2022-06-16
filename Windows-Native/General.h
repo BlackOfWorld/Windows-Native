@@ -7,18 +7,18 @@ struct Process
 	DWORD(*Exists)(const WCHAR*);
 };
 
-struct API
+struct LIBRARY
 {
 	PVOID(*GetFunction)(PVOID, const CHAR*);
 	PVOID(*GetModule)(const WCHAR*);
-	PVOID(*LoadLibrary)(const CHAR*);
+	PVOID(*Load)(const CHAR*);
 };
 
 struct nativeLib
 {
 	BOOLEAN isInitialized;
 	struct Process Process;
-	struct API Api;
+	struct LIBRARY Library;
 };
 
 extern struct nativeLib NativeLib;

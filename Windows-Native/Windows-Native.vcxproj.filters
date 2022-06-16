@@ -1,10 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Source Files">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
-    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
@@ -21,7 +17,7 @@
     <Filter Include="Native">
       <UniqueIdentifier>{73c2c5ec-24f4-4967-8832-7f935b965c80}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Native\API">
+    <Filter Include="Native\Library">
       <UniqueIdentifier>{a9143c57-e429-4d77-af5f-731df931bebd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -36,8 +32,8 @@
     <ClInclude Include="System\Process\Process.h">
       <Filter>System\Process</Filter>
     </ClInclude>
-    <ClInclude Include="Native\API\API.h">
-      <Filter>Native\API</Filter>
+    <ClInclude Include="Native\API\Library.h">
+      <Filter>Native\Library</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -48,8 +44,8 @@
     <ClCompile Include="System\Process\Process.c">
       <Filter>System\Process</Filter>
     </ClCompile>
-    <ClCompile Include="Native\API\API.c">
-      <Filter>Native\API</Filter>
+    <ClCompile Include="Native\API\Library.c">
+      <Filter>Native\Library</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

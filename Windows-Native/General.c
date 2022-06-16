@@ -4,7 +4,7 @@
 #include "framework.h"
 #include "General.h"
 
-#include "Native/API/API.h"
+#include "Native/API/Library.h"
 #include "System/Process/Process.h"
 
 struct nativeLib NativeLib;
@@ -13,5 +13,5 @@ EXTERNC void NativeInit()
 {
 	NativeLib.isInitialized = true;
 	NativeLib.Process = Process;
-	NativeLib.Api = Api;
+	NativeLib.Library = Library;
 }

@@ -21,13 +21,13 @@
   <ItemGroup>
     <ClInclude Include="framework.h" />
     <ClInclude Include="General.h" />
-    <ClInclude Include="Native\API\API.h" />
+    <ClInclude Include="Native\API\Library.h" />
     <ClInclude Include="System\Process\Process.h" />
     <ClInclude Include="System\Registry\Registry.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="General.c" />
-    <ClCompile Include="Native\API\API.c" />
+    <ClCompile Include="Native\API\Library.c" />
     <ClCompile Include="System\Process\Process.c" />
     <ClCompile Include="System\Registry\Registry.c" />
   </ItemGroup>

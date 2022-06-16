@@ -57,7 +57,7 @@
 
 
 // types
-#ifdef _WIN64
+#if defined(_WIN64)
 typedef __int64 LONGLONG;
 typedef unsigned __int64 ULONGLONG;
 typedef unsigned __int64 size_t;
@@ -66,15 +66,7 @@ typedef __int64          intptr_t;
 
 #define MAXLONGLONG                         (0x7fffffffffffffff)
 
-#define POINTER_64 __ptr64
 typedef unsigned __int64 POINTER_64_INT;
-#if defined(_WIN64)
-#define POINTER_32 __ptr32
-#else
-#define POINTER_32
-#endif
-#endif
-#if defined(_WIN64)
 typedef __int64 INT_PTR, * PINT_PTR;
 typedef unsigned __int64 UINT_PTR, * PUINT_PTR;
 
@@ -97,6 +89,17 @@ typedef int              ptrdiff_t;
 typedef int              intptr_t;
 
 #endif
+#if defined(_WIN64)
+#define POINTER_64 __ptr64
+#define POINTER_32 __ptr32
+#else
+#define POINTER_64
+#define POINTER_32
+#endif
+
+#define CONTAINING_RECORD(address, type, field) ((type *)( \
+                                                  (PCHAR)(address) - \
+                                                  (ULONG_PTR)(&((type *)0)->field)))
 
 
 typedef unsigned short wchar_t;
@@ -117,7 +120,6 @@ typedef unsigned int DWORD32;
 typedef unsigned __int64 DWORD64, * PDWORD64;
 typedef long LONG, * PLONG, * LPLONG;
 typedef signed __int64 LONGLONG;
-typedef __int3264 LONG_PTR;
 typedef signed int LONG32;
 typedef signed __int64 LONG64, * PLONG64;
 typedef const char* LPCSTR;
@@ -134,7 +136,6 @@ typedef unsigned short UINT16;
 typedef unsigned int UINT32;
 typedef unsigned __int64 UINT64;
 typedef unsigned long ULONG, * PULONG;
-typedef unsigned __int3264 ULONG_PTR;
 typedef unsigned int ULONG32;
 typedef unsigned __int64 ULONG64;
 typedef unsigned __int64 ULONGLONG;
@@ -291,16 +292,16 @@ typedef DWORD NTSTATUS;
 #define TH32CS_SNAPTHREAD 0x00000004
 #define TH32CS_SNAPALL TH32CS_SNAPHEAPLIST | TH32CS_SNAPMODULE | TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD
 
+
 typedef struct _LIST_ENTRY {
 	struct _LIST_ENTRY* Flink;
 	struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, * PLIST_ENTRY;
 
 typedef struct _UNICODE_STRING {
-	unsigned short	length;
-	unsigned short	maxLength;
-	unsigned char	Reserved[4];
-	wchar_t* buffer;
+	unsigned short	Length;
+	unsigned short	MaximumLength;
+	wchar_t* Buffer;
 } UNICODE_STRING, * PUNICODE_STRING;
 
 typedef struct _ACTIVATION_CONTEXT
@@ -357,25 +358,41 @@ typedef struct _LDR_DATA_TABLE_ENTRY
 	LIST_ENTRY StaticLinks;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
-typedef struct _PEB_LDR_DATA {
-	unsigned int		Length;
-	unsigned int		Initialized;
-	unsigned short		SsHandle;
-	LIST_ENTRY			InLoadOrderModuleList;
-	LIST_ENTRY			InMemoryOrderModuleList;
-	void* EntryInProgress;
-	unsigned short		ShutdownInProgress;
-	void* ShutdownThreadId;
+typedef struct _PEB_LDR_DATA
+{
+    ULONG Length;                                                           //0x0
+    UCHAR Initialized;                                                      //0x4
+    VOID* SsHandle;                                                         //0x8
+    struct _LIST_ENTRY InLoadOrderModuleList;                               //0x10
+    struct _LIST_ENTRY InMemoryOrderModuleList;                             //0x20
+    struct _LIST_ENTRY InInitializationOrderModuleList;                     //0x30
+    VOID* EntryInProgress;                                                  //0x40
+    UCHAR ShutdownInProgress;                                               //0x48
+    VOID* ShutdownThreadId;                                                 //0x50
 } PEB_LDR_DATA, * PPEB_LDR_DATA;
 
 typedef struct _PEB {
-	unsigned char		InheritedAddressSpace;
-	unsigned char		ReadImageFileExecOptions;
-	unsigned char		BeginDebugged;
-	unsigned char		Reserved[5];
-	unsigned short		Mutant;
-	void* ImageBaseAddress;
-	PPEB_LDR_DATA		Ldr;
+    UCHAR InheritedAddressSpace;                                            //0x0
+    UCHAR ReadImageFileExecOptions;                                         //0x1
+    UCHAR BeingDebugged;                                                    //0x2
+    union
+    {
+        UCHAR BitField;                                                     //0x3
+        struct
+        {
+            UCHAR ImageUsesLargePages : 1;                                    //0x3
+            UCHAR IsProtectedProcess : 1;                                     //0x3
+            UCHAR IsImageDynamicallyRelocated : 1;                            //0x3
+            UCHAR SkipPatchingUser32Forwarders : 1;                           //0x3
+            UCHAR IsPackagedProcess : 1;                                      //0x3
+            UCHAR IsAppContainer : 1;                                         //0x3
+            UCHAR IsProtectedProcessLight : 1;                                //0x3
+            UCHAR IsLongPathAwareProcess : 1;                                 //0x3
+        };
+    };
+    VOID* Mutant;                                                           //0x4
+    VOID* ImageBaseAddress;                                                 //0x8
+    struct _PEB_LDR_DATA* Ldr;                                              //0xc
 } PEB, * PPEB;
 
 typedef struct _TIB {

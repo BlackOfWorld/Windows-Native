@@ -2,12 +2,10 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="test.cpp" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gtest\gtest-all.cc" />
-    <ClCompile Include="$(MSBuildThisFileDirectory)..\..\lib\native\src\gmock\gmock-all.cc" />
     <ClCompile Include="Tests\ProcessTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="Tests\APITest.cpp">
+    <ClCompile Include="Tests\LibraryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
   </ItemGroup>
