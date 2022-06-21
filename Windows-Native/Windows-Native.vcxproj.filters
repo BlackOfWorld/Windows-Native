@@ -20,6 +20,9 @@
     <Filter Include="Native\Library">
       <UniqueIdentifier>{a9143c57-e429-4d77-af5f-731df931bebd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Memory">
+      <UniqueIdentifier>{f628afbe-62e0-4802-9038-ea480761d1fa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -35,6 +38,12 @@
     <ClInclude Include="Native\API\Library.h">
       <Filter>Native\Library</Filter>
     </ClInclude>
+    <ClInclude Include="Native\API\Loader.h">
+      <Filter>Native\Library</Filter>
+    </ClInclude>
+    <ClInclude Include="Memory\Memory.h">
+      <Filter>Memory</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="General.c" />
@@ -46,6 +55,12 @@
     </ClCompile>
     <ClCompile Include="Native\API\Library.c">
       <Filter>Native\Library</Filter>
+    </ClCompile>
+    <ClCompile Include="Native\API\Loader.c">
+      <Filter>Native\Library</Filter>
+    </ClCompile>
+    <ClCompile Include="Memory\Memory.c">
+      <Filter>Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

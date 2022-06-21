@@ -3,14 +3,16 @@
 
 #include <string.h>
 
+#include "Loader.h"
+
 EXTERNC IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 
 void* Library_GetModule(const WCHAR* dllName)
 {
-#if defined(_WIN64)  
+#if defined(_WIN64)
 	PPEB pPeb = (PPEB)__readgsqword(0x60);
-#elif defined(_WIN32)  
+#elif defined(_WIN32)
 	PPEB pPeb = (PPEB)__readfsdword(0x30);
 #endif
 	if (dllName == NULL) return pPeb->ImageBaseAddress;
@@ -70,9 +72,23 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
 	return (void*)((size_t)hModule + (*(DWORD*)((size_t)hModule + pExport->AddressOfFunctions + (idx * 4))));
 }
 
-void* Library_Load(const CHAR* dllPath)
-{
 
+void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t bufferLen)
+{
+	struct Loader_Module mod;
+	switch(LOWORD(flags))
+	{
+	case File:
+
+		break;
+	case Memory:
+		mod.data = buffer;
+		mod.dataLen = bufferLen;
+		mod.cDllName = mod.dllName = dllName;
+		break;
+	}
+
+	return NULL;
 }
 
 
