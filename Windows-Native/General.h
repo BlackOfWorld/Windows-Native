@@ -26,6 +26,7 @@ struct Process
 struct Library
 {
 	PVOID(*GetModuleFunction)(const WCHAR*, const CHAR*);
+	PVOID(*GetFunctionByOrdinal)(PVOID hModule, DWORD Ordinal);
 	PVOID(*GetFunction)(PVOID, const CHAR*);
 	PVOID(*GetModule)(const WCHAR*);
 	PVOID(*Load)(const CHAR*);

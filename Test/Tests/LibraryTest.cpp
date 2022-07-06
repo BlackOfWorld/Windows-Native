@@ -18,6 +18,11 @@ TEST(Library, GetFunction)
 	EXPECT_EQ(NativeLib.Library.GetFunction(NativeLib.Library.GetModule(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA);
 }
 
+TEST(Library, GetFunctionByOrdinal)
+{
+	EXPECT_EQ(NativeLib.Library.GetFunctionByOrdinal(NULL, 0), &ExportedFunction);
+}
+
 TEST(Library, GetModuleFunction)
 {
 	EXPECT_TRUE(NativeLib.Library.GetModuleFunction);
