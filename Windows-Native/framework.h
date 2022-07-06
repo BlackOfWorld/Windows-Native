@@ -94,8 +94,6 @@ typedef _W64 unsigned long ULONG_PTR, * PULONG_PTR;
 typedef unsigned int     size_t;
 typedef int              ptrdiff_t;
 typedef int              intptr_t;
-typedef ULONG_PTR SIZE_T, * PSIZE_T;
-typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 #endif
 #if defined(_WIN64)
 #define POINTER_64 __ptr64
@@ -105,6 +103,7 @@ typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 #define POINTER_32
 #endif
 
+
 #define CONTAINING_RECORD(address, type, field) ((type *)( \
                                                   (PCHAR)(address) - \
                                                   (ULONG_PTR)(&((type *)0)->field)))
@@ -112,6 +111,8 @@ typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 
 typedef unsigned short wchar_t;
 typedef char CHAR, * PCHAR;
+typedef ULONG_PTR SIZE_T, * PSIZE_T;
+typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 #define MAX_PATH          260
 
 #define MAKEWORD(a, b)      ((WORD)(((BYTE)(((DWORD_PTR)(a)) & 0xff)) | ((WORD)((BYTE)(((DWORD_PTR)(b)) & 0xff))) << 8))
