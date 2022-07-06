@@ -1136,30 +1136,26 @@ inline size_t mbstowcs(wchar_t* wcstr, const char* mbstr, size_t count)
 
         if (mbstr[i] == 0) {
             result = 0;
-        }
-        else {
+        } else {
             wcstr[size] = mbstr[i];
             result = 1;
         }
         if (result == -1) {
             return -1;
         }
-        else if (result == 0) {
-            wcstr[size] = L'\0';
-            break;
+        if (result == 0) {
+	        wcstr[size] = L'\0';
+	        break;
         }
-        else {
-            i += result;
-        }
-
+        i += result;
     }
     return size;
 }
 #pragma function(memcpy)
-inline void* memcpy(unsigned char* dst, unsigned char* src, size_t len)
+inline void* memcpy(char* dst, char* src, size_t len)
 {
     if(cpu_fsrm)
-        __movsb(dst, src, len);
+        __movsb((unsigned char*)dst, (unsigned char*)src, len);
     else
 		for (int i = 0; i < len; i++)
 			dst[i] = src[i];

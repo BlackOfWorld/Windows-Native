@@ -23,6 +23,9 @@
     <Filter Include="Memory">
       <UniqueIdentifier>{f628afbe-62e0-4802-9038-ea480761d1fa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="System\File">
+      <UniqueIdentifier>{eb855523-ef5e-431f-9363-9806bb7f537c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">

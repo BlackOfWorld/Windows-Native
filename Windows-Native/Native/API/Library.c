@@ -63,16 +63,15 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
 	}
 	ULONG_PTR pFuncAddr = *(DWORD*)((ULONG_PTR)hModule + pExport->AddressOfFunctions + idx * 4);
 	if (pFuncAddr >= pDirectory->VirtualAddress && pFuncAddr < pDirectory->VirtualAddress + pDirectory->Size)
-		//return Library.GetModuleFunction();
 	{
-		auto strAddr = (ULONG_PTR)hModule + pFuncAddr;
-		__debugbreak();
-		char* libA[MAX_PATH] = {0};
-		wchar_t* libW[MAX_PATH] = { 0 };
-		char* funcA[MAX_PATH] = {0};
-		char* dot = strchrA((char*)strAddr, '.');
+		// This is a forward export function!
+		char* strAddr = (char*)(ULONG_PTR)hModule + pFuncAddr;
+		char libA[MAX_PATH] = {0};
+		wchar_t libW[MAX_PATH] = { 0 };
+		char funcA[MAX_PATH] = {0};
+		char* dot = (char*)strchrA(strAddr, '.');
 		if (dot == 0) __debugbreak();
-		auto dotI = (size_t)(dot - strAddr);
+		size_t dotI = (size_t)(dot - strAddr);
 		memcpy(libA, strAddr, dotI);
 		memcpy(funcA, ++dot, strlenA(dot));
 		mbstowcs(libW, libA, dotI);
@@ -99,6 +98,8 @@ void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t buf
 		mod.dataLen = bufferLen;
 		mod.cDllName = mod.dllName = dllName;
 		break;
+	default:
+		__debugbreak();
 	}
 
 	return NULL;
