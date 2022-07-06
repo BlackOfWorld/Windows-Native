@@ -1,20 +1,15 @@
 #include <framework.h>
 #include "Library.h"
 
-#include <string.h>
-
 #include "Loader.h"
+#include "Memory/Memory.h"
 
 EXTERNC IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)
 
 void* Library_GetModule(const WCHAR* dllName)
 {
-#if defined(_WIN64)
-	PPEB pPeb = (PPEB)__readgsqword(0x60);
-#elif defined(_WIN32)
-	PPEB pPeb = (PPEB)__readfsdword(0x30);
-#endif
+	PPEB pPeb = NtGetPeb();
 	if (dllName == NULL) return pPeb->ImageBaseAddress;
 
 	//PLDR_DATA_TABLE_ENTRY pModuleList = (PLDR_DATA_TABLE_ENTRY*)->InLoadOrderModuleList.Flink;
@@ -22,18 +17,15 @@ void* Library_GetModule(const WCHAR* dllName)
 	PPEB_LDR_DATA pLdr = pPeb->Ldr;
 	for (PLIST_ENTRY list = pLdr->InLoadOrderModuleList.Flink; list != &pLdr->InLoadOrderModuleList; list = list->Flink) {
 		PLDR_DATA_TABLE_ENTRY pEntry = CONTAINING_RECORD(list, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);
-		if (!_wcsicmp(pEntry->BaseDllName.Buffer, dllName))
+		if (!wcsnicmp(pEntry->BaseDllName.Buffer, dllName, pEntry->BaseDllName.Length / sizeof(wchar_t) - 4))
 			return pEntry->DllBase;
 	}
 	return NULL;
 }
-
+PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName);
 void* Library_GetFunction(PVOID hModule, const char* funcName)
 {
-	if (!hModule)
-	{
-		hModule = Library_GetModule(0);
-	}
+	if (!hModule) hModule = Library_GetModule(0);
 	const PBYTE pDest = hModule;
 	int idx = -1;
 	PIMAGE_DOS_HEADER pImageDosDest = (PIMAGE_DOS_HEADER)pDest;
@@ -57,7 +49,7 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
 	{
 		DWORD* nameRef = (DWORD*)((size_t)pDest + pExport->AddressOfNames);
 		for (DWORD i = 0; i < pExport->NumberOfNames; i++, nameRef++, ordinal++) {
-			if (strcmp(funcName, (const char*)((size_t)pDest + (*nameRef))) == 0) {
+			if (strcmpA(funcName, (const char*)((size_t)pDest + (*nameRef))) == 0) {
 				idx = *ordinal;
 				break;
 			}
@@ -69,19 +61,40 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
 	if ((DWORD)idx > pExport->NumberOfFunctions) {
 		return NULL;
 	}
-	return (void*)((size_t)hModule + (*(DWORD*)((size_t)hModule + pExport->AddressOfFunctions + (idx * 4))));
+	ULONG_PTR pFuncAddr = *(DWORD*)((ULONG_PTR)hModule + pExport->AddressOfFunctions + idx * 4);
+	if (pFuncAddr >= pDirectory->VirtualAddress && pFuncAddr < pDirectory->VirtualAddress + pDirectory->Size)
+		//return Library.GetModuleFunction();
+	{
+		auto strAddr = (ULONG_PTR)hModule + pFuncAddr;
+		__debugbreak();
+		char* libA[MAX_PATH] = {0};
+		wchar_t* libW[MAX_PATH] = { 0 };
+		char* funcA[MAX_PATH] = {0};
+		char* dot = strchrA((char*)strAddr, '.');
+		if (dot == 0) __debugbreak();
+		auto dotI = (size_t)(dot - strAddr);
+		memcpy(libA, strAddr, dotI);
+		memcpy(funcA, ++dot, strlenA(dot));
+		mbstowcs(libW, libA, dotI);
+		return Library.GetModuleFunction(libW, funcA);
+	}
+
+	return (void*)((ULONG_PTR)hModule + pFuncAddr);
 }
 
+inline PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName)
+{
+	return Library.GetFunction(Library.GetModule(dllName), funcName);
+}
 
 void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t bufferLen)
 {
 	struct Loader_Module mod;
 	switch(LOWORD(flags))
 	{
-	case File:
-
+	case LoadFile:
 		break;
-	case Memory:
+	case LoadMemory:
 		mod.data = buffer;
 		mod.dataLen = bufferLen;
 		mod.cDllName = mod.dllName = dllName;
@@ -91,9 +104,9 @@ void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t buf
 	return NULL;
 }
 
-
-struct LIBRARY Library = {
-	.GetFunction = (void*)Library_GetFunction,
-	.GetModule = (void*)Library_GetModule,
-	.Load = (void*)Library_Load,
+struct Library Library = {
+	.GetFunction = &Library_GetFunction,
+	.GetModuleFunction = &Library_GetModuleFunction,
+	.GetModule = &Library_GetModule,
+	.Load = &Library_Load,
 };

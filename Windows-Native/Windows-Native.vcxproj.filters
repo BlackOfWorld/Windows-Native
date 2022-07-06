@@ -62,6 +62,9 @@
     <ClCompile Include="Memory\Memory.c">
       <Filter>Memory</Filter>
     </ClCompile>
+    <ClCompile Include="framework.c">
+      <Filter>Header Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />

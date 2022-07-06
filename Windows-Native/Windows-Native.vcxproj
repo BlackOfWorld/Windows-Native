@@ -28,6 +28,7 @@
     <ClInclude Include="System\Registry\Registry.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="framework.c" />
     <ClCompile Include="General.c" />
     <ClCompile Include="Memory\Memory.c" />
     <ClCompile Include="Native\API\Library.c" />

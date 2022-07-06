@@ -5,8 +5,8 @@ struct Loader_Module
 {
 	CHAR* data;
 	size_t dataLen;
-	wchar_t* dllName;
-	wchar_t* cDllName;
+	const wchar_t* dllName;
+	const wchar_t* cDllName;
 	ULONG_PTR moduleBase;
 	BOOLEAN linkToPeb;
 };

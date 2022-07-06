@@ -3,10 +3,9 @@
 
 typedef enum LoaderFlags
 {
-	File,
-	Memory,
+	LoadFile,
+	LoadMemory,
 	NoLink
 };
-void API_Init(void);
 
-extern struct LIBRARY Library;
+extern struct Library Library;

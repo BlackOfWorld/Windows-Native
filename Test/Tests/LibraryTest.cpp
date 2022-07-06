@@ -7,6 +7,14 @@ TEST(Library, GetFunction)
     EXPECT_EQ(NativeLib.Library.GetFunction(GetModuleHandleA("kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA);
     EXPECT_EQ(NativeLib.Library.GetFunction(NativeLib.Library.GetModule(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA);
 }
+TEST(Library, GetModuleFunction)
+{
+    EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "SetDllDirectoryA"), &SetDllDirectoryA);
+}
+TEST(Library, GetModuleFunctionForwarded)
+{
+    EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "HeapAlloc"), &HeapAlloc);
+}
 TEST(Library, GetModule)
 {
     EXPECT_FALSE(NativeLib.Library.GetModule == NULL);

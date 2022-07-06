@@ -1,5 +1,11 @@
 #pragma once
+#include <stdint.h>
 #include <intrin.h>
+extern int cpu_fsrm;
+extern void cpu_detect_features(void);
+#if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
+#error "This architecture is currently unsupported"
+#endif
 
 #ifdef __cplusplus
 #   define EXTERNC extern "C"
@@ -76,6 +82,7 @@ typedef unsigned __int64 ULONG_PTR, * PULONG_PTR;
 #define __int3264   __int64
 
 #else
+struct PRTL_CRITICAL_SECTION;
 typedef _W64 int INT_PTR, * PINT_PTR;
 typedef _W64 unsigned int UINT_PTR, * PUINT_PTR;
 
@@ -87,7 +94,8 @@ typedef _W64 unsigned long ULONG_PTR, * PULONG_PTR;
 typedef unsigned int     size_t;
 typedef int              ptrdiff_t;
 typedef int              intptr_t;
-
+typedef ULONG_PTR SIZE_T, * PSIZE_T;
+typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 #endif
 #if defined(_WIN64)
 #define POINTER_64 __ptr64
@@ -283,6 +291,8 @@ typedef DWORD NTSTATUS;
 #define bool  _Bool
 #define false 0
 #define true  1
+#define FALSE 0
+#define TRUE 1
 
 #define TH32CS_INHERIT 0x80000000
 #define TH32CS_SNAPHEAPLIST 0x00000001
@@ -291,6 +301,56 @@ typedef DWORD NTSTATUS;
 #define TH32CS_SNAPPROCESS 0x00000002
 #define TH32CS_SNAPTHREAD 0x00000004
 #define TH32CS_SNAPALL TH32CS_SNAPHEAPLIST | TH32CS_SNAPMODULE | TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD
+
+#define DELETE                           (0x00010000L)
+#define READ_CONTROL                     (0x00020000L)
+#define WRITE_DAC                        (0x00040000L)
+#define WRITE_OWNER                      (0x00080000L)
+#define SYNCHRONIZE                      (0x00100000L)
+#define STANDARD_RIGHTS_REQUIRED         (0x000F0000L)
+#define STANDARD_RIGHTS_READ             (READ_CONTROL)
+#define STANDARD_RIGHTS_WRITE            (READ_CONTROL)
+#define STANDARD_RIGHTS_EXECUTE          (READ_CONTROL)
+#define STANDARD_RIGHTS_ALL              (0x001F0000L)
+#define SPECIFIC_RIGHTS_ALL              (0x0000FFFFL)
+#define ACCESS_SYSTEM_SECURITY           (0x01000000L)
+#define MAXIMUM_ALLOWED                  (0x02000000L)
+#define GENERIC_READ                     (0x80000000L)
+#define GENERIC_WRITE                    (0x40000000L)
+#define GENERIC_EXECUTE                  (0x20000000L)
+#define GENERIC_ALL                      (0x10000000L)
+
+typedef enum _SECTION_INHERIT {
+    ViewShare = 1,
+    ViewUnmap = 2
+} SECTION_INHERIT, * PSECTION_INHERIT;
+typedef DWORD ACCESS_MASK;
+typedef ACCESS_MASK* PACCESS_MASK;
+typedef struct _ULARGE_INTEGER
+{
+    union
+    {
+        struct
+        {
+            ULONG LowPart;
+            ULONG HighPart;
+        };
+        UINT64 QuadPart;
+    };
+} ULARGE_INTEGER, * PULARGE_INTEGER;
+typedef struct _LARGE_INTEGER
+{
+    union
+    {
+        struct
+        {
+            ULONG LowPart;
+            LONG HighPart;
+        };
+        INT64 QuadPart;
+    };
+} LARGE_INTEGER, * PLARGE_INTEGER;
+
 
 
 typedef struct _LIST_ENTRY {
@@ -370,30 +430,189 @@ typedef struct _PEB_LDR_DATA
     UCHAR ShutdownInProgress;                                               //0x48
     VOID* ShutdownThreadId;                                                 //0x50
 } PEB_LDR_DATA, * PPEB_LDR_DATA;
-
-typedef struct _PEB {
-    UCHAR InheritedAddressSpace;                                            //0x0
-    UCHAR ReadImageFileExecOptions;                                         //0x1
-    UCHAR BeingDebugged;                                                    //0x2
-    union
+typedef struct PRTL_CRITICAL_SECTION_DEBUG;
+typedef struct _RTL_CRITICAL_SECTION_DEBUG
+{
+    WORD Type;
+    WORD CreatorBackTraceIndex;
+    struct _RTL_CRITICAL_SECTION* CriticalSection;
+    LIST_ENTRY ProcessLocksList;
+    ULONG EntryCount;
+    ULONG ContentionCount;
+    ULONG Flags;
+    WORD CreatorBackTraceIndexHigh;
+    WORD SpareUSHORT;
+} RTL_CRITICAL_SECTION_DEBUG, * PRTL_CRITICAL_SECTION_DEBUG;
+typedef struct _RTL_CRITICAL_SECTION
+{
+    PRTL_CRITICAL_SECTION_DEBUG DebugInfo;
+    LONG LockCount;
+    LONG RecursionCount;
+    PVOID OwningThread;
+    PVOID LockSemaphore;
+    ULONG SpinCount;
+} RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;
+typedef struct _RTL_DRIVE_LETTER_CURDIR
+{
+    WORD Flags;
+    WORD Length;
+    ULONG TimeStamp;
+    STRING DosPath;
+} RTL_DRIVE_LETTER_CURDIR, * PRTL_DRIVE_LETTER_CURDIR;
+typedef struct _CURDIR
+{
+    UNICODE_STRING DosPath;
+    PVOID Handle;
+} CURDIR, * PCURDIR;
+typedef struct _RTL_USER_PROCESS_PARAMETERS
+{
+    ULONG MaximumLength;
+    ULONG Length;
+    ULONG Flags;
+    ULONG DebugFlags;
+    PVOID ConsoleHandle;
+    ULONG ConsoleFlags;
+    PVOID StandardInput;
+    PVOID StandardOutput;
+    PVOID StandardError;
+    CURDIR CurrentDirectory;
+    UNICODE_STRING DllPath;
+    UNICODE_STRING ImagePathName;
+    UNICODE_STRING CommandLine;
+    PVOID Environment;
+    ULONG StartingX;
+    ULONG StartingY;
+    ULONG CountX;
+    ULONG CountY;
+    ULONG CountCharsX;
+    ULONG CountCharsY;
+    ULONG FillAttribute;
+    ULONG WindowFlags;
+    ULONG ShowWindowFlags;
+    UNICODE_STRING WindowTitle;
+    UNICODE_STRING DesktopInfo;
+    UNICODE_STRING ShellInfo;
+    UNICODE_STRING RuntimeData;
+    RTL_DRIVE_LETTER_CURDIR CurrentDirectores[32];
+    ULONG EnvironmentSize;
+} RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
+typedef struct _PEB_FREE_BLOCK
+{
+    struct _PEB_FREE_BLOCK* Next;
+    ULONG Size;
+} PEB_FREE_BLOCK, * PPEB_FREE_BLOCK;
+struct _ASSEMBLY_STORAGE_MAP;
+struct _ACTIVATION_CONTEXT_DATA;
+struct _FLS_CALLBACK_INFO;
+typedef struct _PEB
+{
+    UCHAR InheritedAddressSpace;
+    UCHAR ReadImageFileExecOptions;
+    UCHAR BeingDebugged;
+     union
     {
         UCHAR BitField;                                                     //0x3
         struct
         {
-            UCHAR ImageUsesLargePages : 1;                                    //0x3
-            UCHAR IsProtectedProcess : 1;                                     //0x3
-            UCHAR IsImageDynamicallyRelocated : 1;                            //0x3
-            UCHAR SkipPatchingUser32Forwarders : 1;                           //0x3
-            UCHAR IsPackagedProcess : 1;                                      //0x3
-            UCHAR IsAppContainer : 1;                                         //0x3
-            UCHAR IsProtectedProcessLight : 1;                                //0x3
-            UCHAR IsLongPathAwareProcess : 1;                                 //0x3
+            UCHAR ImageUsesLargePages:1;                                    //0x3
+            UCHAR IsProtectedProcess:1;                                     //0x3
+            UCHAR IsImageDynamicallyRelocated:1;                            //0x3
+            UCHAR SkipPatchingUser32Forwarders:1;                           //0x3
+            UCHAR IsPackagedProcess:1;                                      //0x3
+            UCHAR IsAppContainer:1;                                         //0x3
+            UCHAR IsProtectedProcessLight:1;                                //0x3
+            UCHAR IsLongPathAwareProcess:1;                                 //0x3
         };
     };
-    VOID* Mutant;                                                           //0x4
-    VOID* ImageBaseAddress;                                                 //0x8
-    struct _PEB_LDR_DATA* Ldr;                                              //0xc
+    PVOID Mutant;
+    PVOID ImageBaseAddress;
+    PPEB_LDR_DATA Ldr;
+    PRTL_USER_PROCESS_PARAMETERS ProcessParameters;
+    PVOID SubSystemData;
+    PVOID ProcessHeap;
+    PRTL_CRITICAL_SECTION FastPebLock;
+    PVOID AtlThunkSListPtr;
+    PVOID IFEOKey;
+    union
+    {
+        ULONG CrossProcessFlags;                                            //0x28
+        struct
+        {
+            ULONG ProcessInJob : 1;                                           //0x28
+            ULONG ProcessInitializing : 1;                                    //0x28
+            ULONG ProcessUsingVEH : 1;                                        //0x28
+            ULONG ProcessUsingVCH : 1;                                        //0x28
+            ULONG ProcessUsingFTH : 1;                                        //0x28
+            ULONG ProcessPreviouslyThrottled : 1;                             //0x28
+            ULONG ProcessCurrentlyThrottled : 1;                              //0x28
+            ULONG ProcessImagesHotPatched : 1;                                //0x28
+            ULONG ReservedBits0 : 24;                                         //0x28
+        };
+    };
+    union
+    {
+        VOID* KernelCallbackTable;                                          //0x2c
+        VOID* UserSharedInfoPtr;                                            //0x2c
+    };
+    ULONG SystemReserved[1];
+    ULONG SpareUlong;
+    PPEB_FREE_BLOCK FreeList;
+    ULONG TlsExpansionCounter;
+    PVOID TlsBitmap;
+    ULONG TlsBitmapBits[2];
+    PVOID ReadOnlySharedMemoryBase;
+    PVOID HotpatchInformation;
+    VOID** ReadOnlyStaticServerData;
+    PVOID AnsiCodePageData;
+    PVOID OemCodePageData;
+    PVOID UnicodeCaseTableData;
+    ULONG NumberOfProcessors;
+    ULONG NtGlobalFlag;
+    LARGE_INTEGER CriticalSectionTimeout;
+    ULONG HeapSegmentReserve;
+    ULONG HeapSegmentCommit;
+    ULONG HeapDeCommitTotalFreeThreshold;
+    ULONG HeapDeCommitFreeBlockThreshold;
+    ULONG NumberOfHeaps;
+    ULONG MaximumNumberOfHeaps;
+    VOID** ProcessHeaps;
+    PVOID GdiSharedHandleTable;
+    PVOID ProcessStarterHelper;
+    ULONG GdiDCAttributeList;
+    PRTL_CRITICAL_SECTION LoaderLock;
+    ULONG OSMajorVersion;
+    ULONG OSMinorVersion;
+    WORD OSBuildNumber;
+    WORD OSCSDVersion;
+    ULONG OSPlatformId;
+    ULONG ImageSubsystem;
+    ULONG ImageSubsystemMajorVersion;
+    ULONG ImageSubsystemMinorVersion;
+    ULONG ImageProcessAffinityMask;
+    ULONG GdiHandleBuffer[34];
+    PVOID PostProcessInitRoutine;
+    PVOID TlsExpansionBitmap;
+    ULONG TlsExpansionBitmapBits[32];
+    ULONG SessionId;
+    ULARGE_INTEGER AppCompatFlags;
+    ULARGE_INTEGER AppCompatFlagsUser;
+    PVOID pShimData;
+    PVOID AppCompatInfo;
+    UNICODE_STRING CSDVersion;
+    struct _ACTIVATION_CONTEXT_DATA* ActivationContextData;
+    struct _ASSEMBLY_STORAGE_MAP* ProcessAssemblyStorageMap;
+    struct _ACTIVATION_CONTEXT_DATA* SystemDefaultActivationContextData;
+    struct _ASSEMBLY_STORAGE_MAP* SystemAssemblyStorageMap;
+    ULONG MinimumStackCommit;
+    struct _FLS_CALLBACK_INFO* FlsCallback;
+    LIST_ENTRY FlsListHead;
+    PVOID FlsBitmap;
+    ULONG FlsBitmapBits[4];
+    ULONG FlsHighIndex;
+    PVOID WerRegistrationData;
+    PVOID WerShipAssertPtr;
 } PEB, * PPEB;
+
 
 typedef struct _TIB {
 	unsigned char	Stuff[0x60];
@@ -532,7 +751,7 @@ typedef struct _IMAGE_FILE_HEADER {
 
 #define IMAGE_FILE_RELOCS_STRIPPED           0x0001  // Relocation info stripped from file.
 #define IMAGE_FILE_EXECUTABLE_IMAGE          0x0002  // File is executable  (i.e. no unresolved external references).
-#define IMAGE_FILE_LINE_NUMS_STRIPPED        0x0004  // Line nunbers stripped from file.
+#define IMAGE_FILE_LINE_NUMS_STRIPPED        0x0004  // Line numbers stripped from file.
 #define IMAGE_FILE_LOCAL_SYMS_STRIPPED       0x0008  // Local symbols stripped from file.
 #define IMAGE_FILE_AGGRESIVE_WS_TRIM         0x0010  // Aggressively trim working set
 #define IMAGE_FILE_LARGE_ADDRESS_AWARE       0x0020  // App can handle >2gb addresses
@@ -717,7 +936,14 @@ typedef struct _IMAGE_ROM_HEADERS {
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_ROM_OPTIONAL_HEADER OptionalHeader;
 } IMAGE_ROM_HEADERS, * PIMAGE_ROM_HEADERS;
-
+typedef struct _OBJECT_ATTRIBUTES {
+    ULONG           Length;
+    HANDLE          RootDirectory;
+    PUNICODE_STRING ObjectName;
+    ULONG           Attributes;
+    PVOID           SecurityDescriptor;
+    PVOID           SecurityQualityOfService;
+} OBJECT_ATTRIBUTES, POBJECT_ATTRIBUTES;
 #ifdef _WIN64
 typedef IMAGE_NT_HEADERS64                  IMAGE_NT_HEADERS;
 typedef PIMAGE_NT_HEADERS64                 PIMAGE_NT_HEADERS;
@@ -801,15 +1027,38 @@ typedef struct _IMAGE_EXPORT_DIRECTORY {
 #define IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT   13   // Delay Load Import Descriptors
 #define IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14   // COM Runtime descriptor
 
-
+#define TU(c) (((c > 96) && (c < 123)) ? (c - 32) : (c))
+inline int stricmpA(const char* a, const char* b)
+{
+    int r = 0;
+    while ((*a) && (*b) && (TU(*a++) == TU(*b++)))  ++r;
+    r = (!((*a) || (*b)) ? (0) : ((TU(*a) > TU(*b)) ?
+        (r + 1) : -(r + 1)));
+    return r;
+}
+inline int stricmpW(const wchar_t* a, const wchar_t* b)
+{
+    int r = 0;
+    while ((*a) && (*b) && (TU(*a++) == TU(*b++)))  ++r;
+    r = (!((*a) || (*b)) ? (0) : ((TU(*a) > TU(*b)) ?
+        (r + 1) : -(r + 1)));
+    return r;
+}
 inline int strcmpA(const char* a, const char* b) {
     while (*a && *a == *b) { ++a; ++b; }
     return (int)(unsigned char)(*a) - (int)(unsigned char)(*b);
 }
 inline int strcmpW(const wchar_t* a, const wchar_t* b)
 {
-    while (*a == *b++) if (*a++ == '\0') return (0);
+    while (*a == *b++) if (*a++ == L'\0') return 0;
     return (*(const unsigned int*)a - *(const unsigned int*)--b);
+}
+inline size_t strlenA(const char* str)
+{
+    size_t len = 0;
+    size_t i = 0;
+    while (str[i++]) ++len;
+    return len;
 }
 inline size_t strlenW(const wchar_t* str)
 {
@@ -818,12 +1067,120 @@ inline size_t strlenW(const wchar_t* str)
     while (str[i++]) ++len;
     return len;
 }
+inline const char* strchrA(const char* str, const char ch)
+{
+    while (*str && *str != ch) str++;
+    return *str == ch ? str : 0;
+}
+inline const wchar_t* strchrW(const wchar_t* str, const wchar_t ch)
+{
+    while (*str && *str != ch) str++;
+    return *str == ch ? str : NULL;
+}
 inline int atoi(char* str)
 {
     int res = 0;
 
     for (int i = 0; str[i] != '\0'; ++i)
         res = res * 10 + str[i] - '0';
-
     return res;
+}
+inline int wcsnicmp(const wchar_t* string1, const wchar_t* string2, size_t count)
+{
+    wchar_t f, l;
+    if (!count) return 0;
+    do {
+        f = *string1 <= L'Z' && *string1 >= L'A'
+            ? *string1 - L'A' + L'a'
+            : *string1;
+        l = *string2 <= L'Z' && *string2 >= L'A'
+            ? *string2 - L'A' + L'a'
+            : *string2;
+        string1++;
+        string2++;
+    } while (--count && f && f == l);
+    return f - l;
+}
+inline int wcsicmp(const wchar_t* string1, const wchar_t* string2)
+{
+    wchar_t f, l;
+    do {
+        f = *string1 <= L'Z' && *string1 >= L'A'
+            ? *string1 + L'a' - L'A'
+            : *string1;
+        l = *string2 <= L'Z' && *string2 >= L'A'
+            ? *string2 + L'a' - L'A'
+            : *string2;
+        string1++;
+        string2++;
+    } while (f && f == l);
+    return f - l;
+}
+inline size_t mbstowcs(wchar_t* wcstr, const char* mbstr, size_t count)
+{
+    size_t size;
+    int i;
+
+    if (count <= 0 || !mbstr)
+        return 0;
+
+    if (!*mbstr)
+        return 0;
+
+
+    if (wcstr == NULL) {
+        __debugbreak();
+    }
+    for (size = 0, i = 0; i < count; size++) {
+        int result;
+
+        if (mbstr[i] == 0) {
+            result = 0;
+        }
+        else {
+            wcstr[size] = mbstr[i];
+            result = 1;
+        }
+        if (result == -1) {
+            return -1;
+        }
+        else if (result == 0) {
+            wcstr[size] = L'\0';
+            break;
+        }
+        else {
+            i += result;
+        }
+
+    }
+    return size;
+}
+#pragma function(memcpy)
+inline void* memcpy(unsigned char* dst, unsigned char* src, size_t len)
+{
+    if(cpu_fsrm)
+        __movsb(dst, src, len);
+    else
+		for (int i = 0; i < len; i++)
+			dst[i] = src[i];
+    return dst;
+}
+
+inline PPEB NtGetPeb()
+{
+#ifdef _M_X64
+    return (PPEB)(__readgsqword(0x60));
+#elif _M_IX86
+    return (PPEB)(__readfsdword(0x30));
+#elif _M_ARM
+    return *(PPPEB)(_MoveFromCoprocessor(15, 0, 13, 0, 2) + 0x30);
+#elif _M_ARM64
+    return *(PPEB*)(__getReg(18) + 0x60); // TEB in x18
+#elif _M_IA64
+    return *(PPEB*)((size_t)_rdteb() + 0x60); // TEB in r13
+#elif _M_ALPHA
+    return *(PPEB*)((size_t)_rdteb() + 0x30); // TEB pointer returned from callpal 0xAB
+#elif _M_MIPS
+    return *(PPEB*)(__gregister_get(13) + 0x30); // TEB in r13
+#endif
 }
