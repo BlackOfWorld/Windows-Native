@@ -10,8 +10,7 @@ EXTERNC IMAGE_DOS_HEADER __ImageBase;
 void* Library_GetModule(const WCHAR* dllName)
 {
 	PPEB pPeb = NtGetPeb();
-	if (dllName == NULL) return pPeb->ImageBaseAddress;
-
+	if (dllName == NULL || dllName[0] == L'\0') return pPeb->ImageBaseAddress;
 	//PLDR_DATA_TABLE_ENTRY pModuleList = (PLDR_DATA_TABLE_ENTRY*)->InLoadOrderModuleList.Flink;
 	//pModuleList =
 	PPEB_LDR_DATA pLdr = pPeb->Ldr;
@@ -81,9 +80,12 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
 	return (void*)((ULONG_PTR)hModule + pFuncAddr);
 }
 
-inline PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName)
+PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName)
 {
-	return Library.GetFunction(Library.GetModule(dllName), funcName);
+	const PVOID mod = Library.GetModule(dllName);
+	return funcName == NULL ||
+		mod == NULL ?
+		NULL : Library.GetFunction(mod, funcName);
 }
 
 void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t bufferLen)
