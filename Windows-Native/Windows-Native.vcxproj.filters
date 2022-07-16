@@ -47,6 +47,9 @@
     <ClInclude Include="Memory\Memory.h">
       <Filter>Memory</Filter>
     </ClInclude>
+    <ClInclude Include="System\File\File.h">
+      <Filter>System\File</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="General.c" />
@@ -67,6 +70,9 @@
     </ClCompile>
     <ClCompile Include="framework.c">
       <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="System\File\File.c">
+      <Filter>System\File</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

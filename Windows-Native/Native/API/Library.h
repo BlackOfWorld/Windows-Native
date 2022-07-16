@@ -1,11 +1,17 @@
 ﻿#pragma once
 #include "General.h"
 
-typedef enum LoaderFlags
+struct MemoryLoad
 {
-	LoadFile,
-	LoadMemory,
-	NoLink
+	enum
+	{
+		LoadFile,
+		LoadMemory,
+		NoLink
+	} flags;
+	const wchar_t* dllName;
+	PBYTE buffer;
+	size_t bufferLen;
 };
 
 extern struct Library Library;

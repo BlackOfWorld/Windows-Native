@@ -116,17 +116,17 @@ PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName)
 		NULL : Library.GetFunction(mod, funcName);
 }
 
-void* Library_Load(DWORD flags, const wchar_t* dllName, PBYTE buffer, size_t bufferLen)
+void* Library_Load(struct MemoryLoad memLoad)
 {
 	struct Loader_Module mod;
-	switch(LOWORD(flags))
+	switch(memLoad.flags)
 	{
 	case LoadFile:
 		break;
 	case LoadMemory:
-		mod.data = buffer;
-		mod.dataLen = bufferLen;
-		mod.cDllName = mod.dllName = dllName;
+		mod.data = memLoad.buffer;
+		mod.dataLen = memLoad.bufferLen;
+		mod.cDllName = mod.dllName = memLoad.dllName;
 		break;
 	default:
 		__debugbreak();

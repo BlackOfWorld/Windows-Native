@@ -5,39 +5,45 @@
 #define THREAD_CREATE_FLAGS_LOADER_WORKER 0x00000010 // NtCreateThreadEx only
 #define THREAD_CREATE_FLAGS_SKIP_LOADER_INIT 0x00000020 // NtCreateThreadEx only
 #define THREAD_CREATE_FLAGS_BYPASS_PROCESS_FREEZE 0x00000040 // NtCreateThreadEx only
-#define THREAD_CREATE_FLAGS_INITIAL_THREAD 0x00000080 // ?
 extern void NativeInit(void);
 
 struct Memory
 {
-	PVOID(*Allocate)(DWORD);
+	PVOID(*Allocate)(DWORD uSize, BOOL zeroMem);
 	PVOID(*GetCurrentHeap)(void);
 	DWORD(*GetCurrentHeaps)(void);
-
+	BOOLEAN(*Free)(PVOID Address);
 };
 
 struct Process
 {
 	BOOLEAN(*Create)(const WCHAR*, const WCHAR*);
-	DWORD(*Exists)(const WCHAR*);
-	NTSTATUS(*Terminate)(HANDLE, NTSTATUS);
+	DWORD(*Exists)(const WCHAR* processName);
+	NTSTATUS(*Terminate)(HANDLE processHandle, NTSTATUS exitStatus);
 };
 
 struct Library
 {
-	PVOID(*GetModuleFunction)(const WCHAR*, const CHAR*);
+	PVOID(*GetModuleFunction)(const WCHAR* dllName, const CHAR* funcName);
 	PVOID(*GetFunctionByOrdinal)(PVOID hModule, DWORD Ordinal);
-	PVOID(*GetFunction)(PVOID, const CHAR*);
-	PVOID(*GetModule)(const WCHAR*);
+	PVOID(*GetFunction)(PVOID hModule, const CHAR* funcName);
+	PVOID(*GetModule)(const WCHAR* dllName);
 	PVOID(*Load)(const CHAR*);
 };
-
+struct File
+{
+	PHANDLE(*Open)();
+	PHANDLE(*Create)();
+	INT64(*Size)(HANDLE hFile);
+	BOOL(*Close)(HANDLE hFile);
+};
 struct nativeLib
 {
 	BOOLEAN isInitialized;
 	struct Process Process;
 	struct Library Library;
 	struct Memory Memory;
+	struct File File;
 };
 
 extern struct nativeLib NativeLib;

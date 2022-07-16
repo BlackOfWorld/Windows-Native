@@ -12,5 +12,5 @@ TEST(Process, Exists)
 {
     EXPECT_TRUE(NativeLib.Process.Exists);
     EXPECT_TRUE(NativeLib.Process.Exists(L"lsass.exe"));
-    EXPECT_FALSE(NativeLib.Process.Exists(L"ThisProcessDoesNotExist.exe"));
+    EXPECT_EQ(NativeLib.Process.Exists(L"ThisProcessDoesNotExist.exe"), -1);
 }

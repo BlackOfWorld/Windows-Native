@@ -1,8 +1,21 @@
 #pragma once
-#include <stdint.h>
 #include <intrin.h>
-extern int cpu_fsrm;
-extern void cpu_detect_features(void);
+#include <immintrin.h>
+
+struct
+{
+    char cpu_FSRM;       //Fast Short REP MOV
+    char cpu_SGX;        //Software Guard Extensions
+    char cpu_AVX;        //Advanced Vector Extensions
+    char cpu_AVX2;       //Advanced Vector Extensions 2
+    char cpu_RDRAND;     //RDRAND (on-chip random number generator) feature
+    char cpu_Hypervisor; //Virtualization capability
+    char cpu_AES;        //AES instructions
+    char cpu_SSE;        //SSE instructions
+    char cpu_SSE2;       //SSE2 instructions
+    char cpu_SHA;        //SHA instructions
+} CPUFeatures;
+
 #if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
 #error "This architecture is currently unsupported"
 #endif
@@ -303,24 +316,78 @@ typedef DWORD NTSTATUS;
 #define TH32CS_SNAPTHREAD 0x00000004
 #define TH32CS_SNAPALL TH32CS_SNAPHEAPLIST | TH32CS_SNAPMODULE | TH32CS_SNAPPROCESS | TH32CS_SNAPTHREAD
 
-#define DELETE                           (0x00010000L)
-#define READ_CONTROL                     (0x00020000L)
-#define WRITE_DAC                        (0x00040000L)
-#define WRITE_OWNER                      (0x00080000L)
-#define SYNCHRONIZE                      (0x00100000L)
-#define STANDARD_RIGHTS_REQUIRED         (0x000F0000L)
-#define STANDARD_RIGHTS_READ             (READ_CONTROL)
-#define STANDARD_RIGHTS_WRITE            (READ_CONTROL)
-#define STANDARD_RIGHTS_EXECUTE          (READ_CONTROL)
-#define STANDARD_RIGHTS_ALL              (0x001F0000L)
-#define SPECIFIC_RIGHTS_ALL              (0x0000FFFFL)
-#define ACCESS_SYSTEM_SECURITY           (0x01000000L)
-#define MAXIMUM_ALLOWED                  (0x02000000L)
-#define GENERIC_READ                     (0x80000000L)
-#define GENERIC_WRITE                    (0x40000000L)
-#define GENERIC_EXECUTE                  (0x20000000L)
-#define GENERIC_ALL                      (0x10000000L)
+#define DELETE                            (0x00010000L)
+#define READ_CONTROL                      (0x00020000L)
+#define WRITE_DAC                         (0x00040000L)
+#define WRITE_OWNER                       (0x00080000L)
+#define SYNCHRONIZE                       (0x00100000L)
+#define STANDARD_RIGHTS_REQUIRED          (0x000F0000L)
+#define STANDARD_RIGHTS_READ              (READ_CONTROL)
+#define STANDARD_RIGHTS_WRITE             (READ_CONTROL)
+#define STANDARD_RIGHTS_EXECUTE           (READ_CONTROL)
+#define STANDARD_RIGHTS_ALL               (0x001F0000L)
+#define SPECIFIC_RIGHTS_ALL               (0x0000FFFFL)
+#define ACCESS_SYSTEM_SECURITY            (0x01000000L)
+#define MAXIMUM_ALLOWED                   (0x02000000L)
+#define GENERIC_READ                      (0x80000000L)
+#define GENERIC_WRITE                     (0x40000000L)
+#define GENERIC_EXECUTE                   (0x20000000L)
+#define GENERIC_ALL                       (0x10000000L)
 
+#define PAGE_NOACCESS                     0x01
+#define PAGE_READONLY                     0x02
+#define PAGE_READWRITE                    0x04
+#define PAGE_WRITECOPY                    0x08
+#define PAGE_EXECUTE                      0x10
+#define PAGE_EXECUTE_READ                 0x20
+#define PAGE_EXECUTE_READWRITE            0x40
+#define PAGE_EXECUTE_WRITECOPY            0x80
+#define PAGE_GUARD                        0x100
+#define PAGE_NOCACHE                      0x200
+#define PAGE_WRITECOMBINE                 0x400
+#define PAGE_GRAPHICS_NOACCESS            0x0800
+#define PAGE_GRAPHICS_READONLY            0x1000
+#define PAGE_GRAPHICS_READWRITE           0x2000
+#define PAGE_GRAPHICS_EXECUTE             0x4000
+#define PAGE_GRAPHICS_EXECUTE_READ        0x8000
+#define PAGE_GRAPHICS_EXECUTE_READWRITE   0x10000
+#define PAGE_GRAPHICS_COHERENT            0x20000
+#define PAGE_GRAPHICS_NOCACHE             0x40000
+#define PAGE_ENCLAVE_THREAD_CONTROL       0x80000000
+#define PAGE_REVERT_TO_FILE_MAP           0x80000000
+#define PAGE_TARGETS_NO_UPDATE            0x40000000
+#define PAGE_TARGETS_INVALID              0x40000000
+#define PAGE_ENCLAVE_UNVALIDATED          0x20000000
+#define PAGE_ENCLAVE_MASK                 0x10000000
+#define PAGE_ENCLAVE_DECOMMIT             PAGE_ENCLAVE_MASK | 0)
+#define PAGE_ENCLAVE_SS_FIRST             PAGE_ENCLAVE_MASK | 1)
+#define PAGE_ENCLAVE_SS_REST              (PAGE_ENCLAVE_MASK | 2)
+#define MEM_COMMIT                        0x00001000
+#define MEM_RESERVE                       0x00002000
+#define MEM_REPLACE_PLACEHOLDER           0x00004000
+#define MEM_RESERVE_PLACEHOLDER           0x00040000
+#define MEM_RESET                         0x00080000
+#define MEM_TOP_DOWN                      0x00100000
+#define MEM_WRITE_WATCH                   0x00200000
+#define MEM_PHYSICAL                      0x00400000
+#define MEM_ROTATE                        0x00800000
+#define MEM_DIFFERENT_IMAGE_BASE_OK       0x00800000
+#define MEM_RESET_UNDO                    0x01000000
+#define MEM_LARGE_PAGES                   0x20000000
+#define MEM_4MB_PAGES                     0x80000000
+#define MEM_64K_PAGES                     (MEM_LARGE_PAGES | MEM_PHYSICAL)
+#define MEM_UNMAP_WITH_TRANSIENT_BOOST    0x00000001
+#define MEM_COALESCE_PLACEHOLDERS         0x00000001
+#define MEM_PRESERVE_PLACEHOLDER          0x00000002
+#define MEM_DECOMMIT                      0x00004000
+#define MEM_RELEASE                       0x00008000
+#define MEM_FREE                          0x00010000
+
+
+#define NT_SUCCESS(Status) ((ULONG)(Status) == 0)
+#define NT_INFORMATION(Status) ((ULONG)(Status) >> 30==1)
+#define NT_WARNING(Status) ((ULONG)(Status) >> 30==2)
+#define NT_ERROR(Status) ((ULONG)(Status) >> 30==3)
 typedef enum _SECTION_INHERIT {
     ViewShare = 1,
     ViewUnmap = 2
@@ -358,6 +425,11 @@ typedef struct _LIST_ENTRY {
 	struct _LIST_ENTRY* Flink;
 	struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, * PLIST_ENTRY;
+struct _CLIENT_ID
+{
+    VOID* UniqueProcess;
+    VOID* UniqueThread;
+};
 
 typedef struct _UNICODE_STRING {
 	unsigned short	Length;
@@ -505,6 +577,12 @@ typedef struct _PEB_FREE_BLOCK
 struct _ASSEMBLY_STORAGE_MAP;
 struct _ACTIVATION_CONTEXT_DATA;
 struct _FLS_CALLBACK_INFO;
+typedef struct _GUID {
+    unsigned long  Data1;
+    unsigned short Data2;
+    unsigned short Data3;
+    unsigned char  Data4[8];
+} GUID;
 typedef struct _PEB
 {
     UCHAR InheritedAddressSpace;
@@ -613,13 +691,171 @@ typedef struct _PEB
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
 } PEB, * PPEB;
-
-
-typedef struct _TIB {
-	unsigned char	Stuff[0x60];
-	PPEB			pPEB;
-} TIB, * PTIB;
-
+struct _NT_TIB
+{
+    struct _EXCEPTION_REGISTRATION_RECORD* ExceptionList;                   //0x0
+    VOID* StackBase;                                                        //0x8
+    VOID* StackLimit;                                                       //0x10
+    VOID* SubSystemTib;                                                     //0x18
+    union
+    {
+        VOID* FiberData;                                                    //0x20
+        ULONG Version;                                                      //0x20
+    };
+    VOID* ArbitraryUserPointer;                                             //0x28
+    struct _NT_TIB* Self;                                                   //0x30
+};
+struct _GDI_TEB_BATCH
+{
+    ULONG Offset : 31;                                                        //0x0
+    ULONG HasRenderingCommand : 1;                                            //0x0
+    ULONGLONG HDC;                                                          //0x8
+    ULONG Buffer[310];                                                      //0x10
+};
+typedef struct _PROCESSOR_NUMBER {
+    WORD   Group;
+    BYTE  Number;
+    BYTE  Reserved;
+} PROCESSOR_NUMBER, * PPROCESSOR_NUMBER;
+//0x1838 bytes (sizeof)
+typedef struct _TEB
+{
+    struct _NT_TIB NtTib;                                                   //0x0
+    VOID* EnvironmentPointer;                                               //0x38
+    struct _CLIENT_ID ClientId;                                             //0x40
+    VOID* ActiveRpcHandle;                                                  //0x50
+    VOID* ThreadLocalStoragePointer;                                        //0x58
+    struct _PEB* ProcessEnvironmentBlock;                                   //0x60
+    ULONG LastErrorValue;                                                   //0x68
+    ULONG CountOfOwnedCriticalSections;                                     //0x6c
+    VOID* CsrClientThread;                                                  //0x70
+    VOID* Win32ThreadInfo;                                                  //0x78
+    ULONG User32Reserved[26];                                               //0x80
+    ULONG UserReserved[5];                                                  //0xe8
+    VOID* WOW32Reserved;                                                    //0x100
+    ULONG CurrentLocale;                                                    //0x108
+    ULONG FpSoftwareStatusRegister;                                         //0x10c
+    VOID* ReservedForDebuggerInstrumentation[16];                           //0x110
+    VOID* SystemReserved1[38];                                              //0x190
+    LONG ExceptionCode;                                                     //0x2c0
+    UCHAR Padding0[4];                                                      //0x2c4
+    struct _ACTIVATION_CONTEXT_STACK* ActivationContextStackPointer;        //0x2c8
+    ULONGLONG InstrumentationCallbackSp;                                    //0x2d0
+    ULONGLONG InstrumentationCallbackPreviousPc;                            //0x2d8
+    ULONGLONG InstrumentationCallbackPreviousSp;                            //0x2e0
+    ULONG TxFsContext;                                                      //0x2e8
+    UCHAR InstrumentationCallbackDisabled;                                  //0x2ec
+    UCHAR Padding1[3];                                                      //0x2ed
+    struct _GDI_TEB_BATCH GdiTebBatch;                                      //0x2f0
+    struct _CLIENT_ID RealClientId;                                         //0x7d8
+    VOID* GdiCachedProcessHandle;                                           //0x7e8
+    ULONG GdiClientPID;                                                     //0x7f0
+    ULONG GdiClientTID;                                                     //0x7f4
+    VOID* GdiThreadLocalInfo;                                               //0x7f8
+    ULONGLONG Win32ClientInfo[62];                                          //0x800
+    VOID* glDispatchTable[233];                                             //0x9f0
+    ULONGLONG glReserved1[29];                                              //0x1138
+    VOID* glReserved2;                                                      //0x1220
+    VOID* glSectionInfo;                                                    //0x1228
+    VOID* glSection;                                                        //0x1230
+    VOID* glTable;                                                          //0x1238
+    VOID* glCurrentRC;                                                      //0x1240
+    VOID* glContext;                                                        //0x1248
+    ULONG LastStatusValue;                                                  //0x1250
+    UCHAR Padding2[4];                                                      //0x1254
+    struct _UNICODE_STRING StaticUnicodeString;                             //0x1258
+    WCHAR StaticUnicodeBuffer[261];                                         //0x1268
+    UCHAR Padding3[6];                                                      //0x1472
+    VOID* DeallocationStack;                                                //0x1478
+    VOID* TlsSlots[64];                                                     //0x1480
+    struct _LIST_ENTRY TlsLinks;                                            //0x1680
+    VOID* Vdm;                                                              //0x1690
+    VOID* ReservedForNtRpc;                                                 //0x1698
+    VOID* DbgSsReserved[2];                                                 //0x16a0
+    ULONG HardErrorMode;                                                    //0x16b0
+    UCHAR Padding4[4];                                                      //0x16b4
+    VOID* Instrumentation[11];                                              //0x16b8
+    struct _GUID ActivityId;                                                //0x1710
+    VOID* SubProcessTag;                                                    //0x1720
+    VOID* PerflibData;                                                      //0x1728
+    VOID* EtwTraceData;                                                     //0x1730
+    VOID* WinSockData;                                                      //0x1738
+    ULONG GdiBatchCount;                                                    //0x1740
+    union
+    {
+        struct _PROCESSOR_NUMBER CurrentIdealProcessor;                     //0x1744
+        ULONG IdealProcessorValue;                                          //0x1744
+        struct
+        {
+            UCHAR ReservedPad0;                                             //0x1744
+            UCHAR ReservedPad1;                                             //0x1745
+            UCHAR ReservedPad2;                                             //0x1746
+            UCHAR IdealProcessor;                                           //0x1747
+        };
+    };
+    ULONG GuaranteedStackBytes;                                             //0x1748
+    UCHAR Padding5[4];                                                      //0x174c
+    VOID* ReservedForPerf;                                                  //0x1750
+    VOID* ReservedForOle;                                                   //0x1758
+    ULONG WaitingOnLoaderLock;                                              //0x1760
+    UCHAR Padding6[4];                                                      //0x1764
+    VOID* SavedPriorityState;                                               //0x1768
+    ULONGLONG ReservedForCodeCoverage;                                      //0x1770
+    VOID* ThreadPoolData;                                                   //0x1778
+    VOID** TlsExpansionSlots;                                               //0x1780
+    VOID* DeallocationBStore;                                               //0x1788
+    VOID* BStoreLimit;                                                      //0x1790
+    ULONG MuiGeneration;                                                    //0x1798
+    ULONG IsImpersonating;                                                  //0x179c
+    VOID* NlsCache;                                                         //0x17a0
+    VOID* pShimData;                                                        //0x17a8
+    USHORT HeapVirtualAffinity;                                             //0x17b0
+    USHORT LowFragHeapDataSlot;                                             //0x17b2
+    UCHAR Padding7[4];                                                      //0x17b4
+    VOID* CurrentTransactionHandle;                                         //0x17b8
+    struct _TEB_ACTIVE_FRAME* ActiveFrame;                                  //0x17c0
+    VOID* FlsData;                                                          //0x17c8
+    VOID* PreferredLanguages;                                               //0x17d0
+    VOID* UserPrefLanguages;                                                //0x17d8
+    VOID* MergedPrefLanguages;                                              //0x17e0
+    ULONG MuiImpersonation;                                                 //0x17e8
+    union
+    {
+        volatile USHORT CrossTebFlags;                                      //0x17ec
+        USHORT SpareCrossTebBits : 16;                                        //0x17ec
+    };
+    union
+    {
+        USHORT SameTebFlags;                                                //0x17ee
+        struct
+        {
+            USHORT SafeThunkCall : 1;                                         //0x17ee
+            USHORT InDebugPrint : 1;                                          //0x17ee
+            USHORT HasFiberData : 1;                                          //0x17ee
+            USHORT SkipThreadAttach : 1;                                      //0x17ee
+            USHORT WerInShipAssertCode : 1;                                   //0x17ee
+            USHORT RanProcessInit : 1;                                        //0x17ee
+            USHORT ClonedThread : 1;                                          //0x17ee
+            USHORT SuppressDebugMsg : 1;                                      //0x17ee
+            USHORT DisableUserStackWalk : 1;                                  //0x17ee
+            USHORT RtlExceptionAttached : 1;                                  //0x17ee
+            USHORT InitialThread : 1;                                         //0x17ee
+            USHORT SessionAware : 1;                                          //0x17ee
+            USHORT LoadOwner : 1;                                             //0x17ee
+            USHORT LoaderWorker : 1;                                          //0x17ee
+            USHORT SpareSameTebBits : 2;                                      //0x17ee
+        };
+    };
+    VOID* TxnScopeEnterCallback;                                            //0x17f0
+    VOID* TxnScopeExitCallback;                                             //0x17f8
+    VOID* TxnScopeContext;                                                  //0x1800
+    ULONG LockCount;                                                        //0x1808
+    LONG WowTebOffset;                                                      //0x180c
+    VOID* ResourceRetValue;                                                 //0x1810
+    VOID* ReservedForWdf;                                                   //0x1818
+    ULONGLONG ReservedForCrt;                                               //0x1820
+    struct _GUID EffectiveContainerId;                                      //0x1828
+} TEB, *PTEB;
 
 typedef struct _IMAGE_DOS_HEADER {      // DOS .EXE header
     WORD   e_magic;                     // Magic number
@@ -730,9 +966,6 @@ typedef struct _IMAGE_VXD_HEADER {      // Windows VXD header
     WORD   e32_ddkver;                  // DDK version for VxD
 } IMAGE_VXD_HEADER, * PIMAGE_VXD_HEADER;
 
-#ifndef _MAC
-#include "poppack.h"                    // Back to 4 byte packing
-#endif
 
 //
 // File header format.
@@ -1028,6 +1261,118 @@ typedef struct _IMAGE_EXPORT_DIRECTORY {
 #define IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT   13   // Delay Load Import Descriptors
 #define IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14   // COM Runtime descriptor
 
+
+typedef struct _IO_STATUS_BLOCK
+{
+    union
+    {
+        LONG Status;                                                        //0x0
+        VOID* Pointer;                                                      //0x0
+    };
+    ULONGLONG Information;                                                  //0x8
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+typedef enum _FILE_INFORMATION_CLASS
+{
+    FileDirectoryInformation = 1,
+    FileFullDirectoryInformation = 2,
+    FileBothDirectoryInformation = 3,
+    FileBasicInformation = 4,
+    FileStandardInformation = 5,
+    FileInternalInformation = 6,
+    FileEaInformation = 7,
+    FileAccessInformation = 8,
+    FileNameInformation = 9,
+    FileRenameInformation = 10,
+    FileLinkInformation = 11,
+    FileNamesInformation = 12,
+    FileDispositionInformation = 13,
+    FilePositionInformation = 14,
+    FileFullEaInformation = 15,
+    FileModeInformation = 16,
+    FileAlignmentInformation = 17,
+    FileAllInformation = 18,
+    FileAllocationInformation = 19,
+    FileEndOfFileInformation = 20,
+    FileAlternateNameInformation = 21,
+    FileStreamInformation = 22,
+    FilePipeInformation = 23,
+    FilePipeLocalInformation = 24,
+    FilePipeRemoteInformation = 25,
+    FileMailslotQueryInformation = 26,
+    FileMailslotSetInformation = 27,
+    FileCompressionInformation = 28,
+    FileObjectIdInformation = 29,
+    FileCompletionInformation = 30,
+    FileMoveClusterInformation = 31,
+    FileQuotaInformation = 32,
+    FileReparsePointInformation = 33,
+    FileNetworkOpenInformation = 34,
+    FileAttributeTagInformation = 35,
+    FileTrackingInformation = 36,
+    FileIdBothDirectoryInformation = 37,
+    FileIdFullDirectoryInformation = 38,
+    FileValidDataLengthInformation = 39,
+    FileShortNameInformation = 40,
+    FileIoCompletionNotificationInformation = 41,
+    FileIoStatusBlockRangeInformation = 42,
+    FileIoPriorityHintInformation = 43,
+    FileSfioReserveInformation = 44,
+    FileSfioVolumeInformation = 45,
+    FileHardLinkInformation = 46,
+    FileProcessIdsUsingFileInformation = 47,
+    FileNormalizedNameInformation = 48,
+    FileNetworkPhysicalNameInformation = 49,
+    FileIdGlobalTxDirectoryInformation = 50,
+    FileIsRemoteDeviceInformation = 51,
+    FileUnusedInformation = 52,
+    FileNumaNodeInformation = 53,
+    FileStandardLinkInformation = 54,
+    FileRemoteProtocolInformation = 55,
+    FileRenameInformationBypassAccessCheck = 56,
+    FileLinkInformationBypassAccessCheck = 57,
+    FileVolumeNameInformation = 58,
+    FileIdInformation = 59,
+    FileIdExtdDirectoryInformation = 60,
+    FileReplaceCompletionInformation = 61,
+    FileHardLinkFullIdInformation = 62,
+    FileIdExtdBothDirectoryInformation = 63,
+    FileDispositionInformationEx = 64,
+    FileRenameInformationEx = 65,
+    FileRenameInformationExBypassAccessCheck = 66,
+    FileDesiredStorageClassInformation = 67,
+    FileStatInformation = 68,
+    FileMemoryPartitionInformation = 69,
+    FileStatLxInformation = 70,
+    FileCaseSensitiveInformation = 71,
+    FileLinkInformationEx = 72,
+    FileLinkInformationExBypassAccessCheck = 73,
+    FileStorageReserveIdInformation = 74,
+    FileCaseSensitiveInformationForceAccessCheck = 75,
+    FileMaximumInformation = 76
+} FILE_INFORMATION_CLASS;
+
+typedef struct _FILE_STANDARD_INFORMATION
+{
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG NumberOfLinks;
+    BOOLEAN DeletePending;
+    BOOLEAN Directory;
+} FILE_STANDARD_INFORMATION, * PFILE_STANDARD_INFORMATION;
+
+typedef struct _FILE_STANDARD_INFORMATION_EX
+{
+    LARGE_INTEGER AllocationSize;
+    LARGE_INTEGER EndOfFile;
+    ULONG NumberOfLinks;
+    BOOLEAN DeletePending;
+    BOOLEAN Directory;
+    BOOLEAN AlternateStream;
+    BOOLEAN MetadataAttribute;
+} FILE_STANDARD_INFORMATION_EX, * PFILE_STANDARD_INFORMATION_EX;
+
+
 #define TU(c) (((c > 96) && (c < 123)) ? (c - 32) : (c))
 inline int stricmpA(const char* a, const char* b)
 {
@@ -1117,7 +1462,7 @@ inline int wcsicmp(const wchar_t* string1, const wchar_t* string2)
     } while (f && f == l);
     return f - l;
 }
-inline size_t mbstowcs(wchar_t* wcstr, const char* mbstr, size_t count)
+inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
 {
     size_t size;
     int i;
@@ -1155,7 +1500,7 @@ inline size_t mbstowcs(wchar_t* wcstr, const char* mbstr, size_t count)
 #pragma function(memcpy)
 inline void* memcpy(char* dst, char* src, size_t len)
 {
-    if(cpu_fsrm)
+    if(CPUFeatures.cpu_FSRM)
         __movsb((unsigned char*)dst, (unsigned char*)src, len);
     else
 		for (int i = 0; i < len; i++)
@@ -1163,21 +1508,424 @@ inline void* memcpy(char* dst, char* src, size_t len)
     return dst;
 }
 
+#pragma function(strcpy)
+inline char* strcpy(char* dst, const char* src)
+{
+    char* ret = dst;
+    while ((*dst++ = *src++));
+    return ret;
+}
+inline WCHAR* wstrcpy(WCHAR* dst, const WCHAR* src)
+{
+    WCHAR* ret = dst;
+    while ((*dst++ = *src++));
+    return ret;
+}
+inline char* strcatA(char* dst, const char* src)
+{
+    char* d = dst;
+    while (*d) d++;
+    while ((*d++ = *src++));
+    return dst;
+}
+
+inline WCHAR* strcatW(WCHAR* dst, const WCHAR* src)
+{
+    WCHAR* d = dst;
+    while (*d) d++;
+    while ((*d++ = *src++));
+    return dst;
+}
+
+typedef struct _RUN_ENTRY {
+    ULONG BaseCode;
+    USHORT RunLength;
+    USHORT CodeSize;
+} RUN_ENTRY, * PRUN_ENTRY;
+
+#pragma region Translation table
+static const RUN_ENTRY RtlpRunTable[] = {
+    {0x00000000, 0x0001, 0x0001},
+    {0x00000103, 0x0001, 0x0001},
+    {0x00000105, 0x0003, 0x0001},
+    {0x0000010c, 0x0002, 0x0001},
+    {0x00000121, 0x0001, 0x0001},
+    {0x40000002, 0x0001, 0x0001},
+    {0x40000006, 0x0001, 0x0001},
+    {0x40000008, 0x0002, 0x0001},
+    {0x4000000c, 0x0002, 0x0001},
+    {0x40000370, 0x0001, 0x0001},
+    {0x40020056, 0x0001, 0x0001},
+    {0x400200af, 0x0001, 0x0001},
+    {0x401a000c, 0x0001, 0x0001},
+    {0x80000001, 0x0006, 0x0002},
+    {0x8000000b, 0x0001, 0x0001},
+    {0x8000000d, 0x000a, 0x0001},
+    {0x8000001a, 0x0006, 0x0001},
+    {0x80000021, 0x0002, 0x0001},
+    {0x80000025, 0x0001, 0x0001},
+    {0x80000027, 0x0001, 0x0001},
+    {0x80000288, 0x0002, 0x0001},
+    {0x80090300, 0x0012, 0x0001},
+    {0x80090316, 0x0003, 0x0001},
+    {0x80090320, 0x0003, 0x0001},
+    {0x80090325, 0x0005, 0x0001},
+    {0x80090330, 0x0002, 0x0001},
+    {0x80090347, 0x0001, 0x0001},
+    {0x80090349, 0x0001, 0x0001},
+    {0x80092010, 0x0001, 0x0001},
+    {0x80092012, 0x0002, 0x0001},
+    {0x80096004, 0x0001, 0x0001},
+    {0x80130001, 0x0005, 0x0001},
+    {0x80190009, 0x0001, 0x0001},
+    {0xc0000001, 0x000b, 0x0001},
+    {0xc000000d, 0x001a, 0x0002},
+    {0xc000002a, 0x0004, 0x0002},
+    {0xc0000030, 0x0001, 0x0001},
+    {0xc0000032, 0x0004, 0x0001},
+    {0xc0000037, 0x0001, 0x0001},
+    {0xc0000039, 0x0071, 0x0002},
+    {0xc00000ab, 0x000c, 0x0001},
+    {0xc00000ba, 0x0019, 0x0001},
+    {0xc00000d4, 0x0004, 0x0001},
+    {0xc00000d9, 0x0002, 0x0001},
+    {0xc00000dc, 0x000e, 0x0001},
+    {0xc00000ed, 0x0012, 0x0001},
+    {0xc0000100, 0x000c, 0x0001},
+    {0xc000010d, 0x0002, 0x0001},
+    {0xc0000117, 0x0001, 0x0001},
+    {0xc000011b, 0x000e, 0x0001},
+    {0xc000012b, 0x0001, 0x0001},
+    {0xc000012d, 0x0005, 0x0001},
+    {0xc0000133, 0x0001, 0x0001},
+    {0xc0000135, 0x0001, 0x0001},
+    {0xc0000138, 0x0002, 0x0001},
+    {0xc000013b, 0x0008, 0x0001},
+    {0xc0000148, 0x0002, 0x0001},
+    {0xc000014b, 0x0003, 0x0001},
+    {0xc000014f, 0x000f, 0x0001},
+    {0xc000015f, 0x0002, 0x0001},
+    {0xc0000162, 0x0001, 0x0001},
+    {0xc0000165, 0x0009, 0x0001},
+    {0xc0000172, 0x0007, 0x0001},
+    {0xc000017a, 0x000d, 0x0001},
+    {0xc0000188, 0x0009, 0x0001},
+    {0xc0000192, 0x000a, 0x0001},
+    {0xc0000202, 0x0002, 0x0001},
+    {0xc0000203, 0x0015, 0x0001},
+    {0xc000021c, 0x0001, 0x0001},
+    {0xc0000220, 0x0002, 0x0001},
+    {0xc0000224, 0x0002, 0x0001},
+    {0xc0000227, 0x0001, 0x0001},
+    {0xc0000229, 0x0003, 0x0002},
+    {0xc000022d, 0x0001, 0x0001},
+    {0xc0000230, 0x0001, 0x0001},
+    {0xc0000233, 0x000f, 0x0001},
+    {0xc0000243, 0x0001, 0x0001},
+    {0xc0000246, 0x0004, 0x0001},
+    {0xc0000253, 0x0001, 0x0001},
+    {0xc0000253, 0x0001, 0x0001},
+    {0xc0000257, 0x0001, 0x0001},
+    {0xc0000259, 0x0001, 0x0001},
+    {0xc000025e, 0x0001, 0x0001},
+    {0xc0000262, 0x0004, 0x0001},
+    {0xc0000267, 0x0001, 0x0001},
+    {0xc000026a, 0x0001, 0x0001},
+    {0xc000026c, 0x0003, 0x0001},
+    {0xc0000272, 0x0001, 0x0001},
+    {0xc0000275, 0x0005, 0x0001},
+    {0xc0000280, 0x0002, 0x0001},
+    {0xc0000283, 0x0005, 0x0001},
+    {0xc000028a, 0x0002, 0x0001},
+    {0xc000028d, 0x0007, 0x0001},
+    {0xc0000295, 0x000b, 0x0001},
+    {0xc00002a1, 0x0012, 0x0001},
+    {0xc00002b6, 0x0003, 0x0001},
+    {0xc00002c1, 0x0001, 0x0001},
+    {0xc00002c3, 0x0001, 0x0001},
+    {0xc00002c5, 0x0003, 0x0001},
+    {0xc00002c9, 0x0005, 0x0001},
+    {0xc00002cf, 0x0002, 0x0001},
+    {0xc00002d4, 0x000a, 0x0001},
+    {0xc00002df, 0x0009, 0x0001},
+    {0xc00002e9, 0x0002, 0x0001},
+    {0xc00002ec, 0x0020, 0x0002},
+    {0xc0000320, 0x0003, 0x0002},
+    {0xc0000350, 0x0003, 0x0002},
+    {0xc0000354, 0x0001, 0x0001},
+    {0xc0000356, 0x0007, 0x0002},
+    {0xc0000361, 0x0004, 0x0001},
+    {0xc000036b, 0x0002, 0x0001},
+    {0xc000036f, 0x0001, 0x0001},
+    {0xc0000380, 0x000e, 0x0002},
+    {0xc000038f, 0x0001, 0x0002},
+    {0xc0000401, 0x0006, 0x0001},
+    {0xc0000408, 0x0009, 0x0002},
+    {0xc0000412, 0x0003, 0x0001},
+    {0xc0020001, 0x001d, 0x0001},
+    {0xc002001f, 0x0001, 0x0001},
+    {0xc0020021, 0x0006, 0x0001},
+    {0xc0020028, 0x0026, 0x0001},
+    {0xc002004f, 0x0007, 0x0001},
+    {0xc0020057, 0x0002, 0x0001},
+    {0xc0020062, 0x0002, 0x0001},
+    {0xc0030001, 0x000c, 0x0001},
+    {0xc0030059, 0x0009, 0x0001},
+    {0xc00a0001, 0x0003, 0x0001},
+    {0xc00a0006, 0x000b, 0x0001},
+    {0xc00a0012, 0x0007, 0x0001},
+    {0xc00a0022, 0x0001, 0x0001},
+    {0xc00a0024, 0x0001, 0x0001},
+    {0xc00a0026, 0x0003, 0x0001},
+    {0xc00a002a, 0x0002, 0x0001},
+    {0xc00a002e, 0x0004, 0x0001},
+    {0xc00a0033, 0x0004, 0x0001},
+    {0xc0130001, 0x0010, 0x0001},
+    {0xc0130012, 0x0005, 0x0001},
+    {0xc0150001, 0x0008, 0x0001},
+    {0xc015000a, 0x0002, 0x0001},
+    {0xc015000e, 0x0001, 0x0001},
+    {0xc01a0001, 0x000b, 0x0001},
+    {0xc01a000d, 0x0022, 0x0001},
+    {0xc0980001, 0x0002, 0x0001},
+    {0xc0980008, 0x0001, 0x0001},
+    {0xffffffff, 0x0001, 0x0001},
+    {0x0, 0x0, 0x0} };
+static const USHORT RtlpStatusTable[] = {
+    0x0000, 0x03e5, 0x00ea, 0x0514, 0x0515, 0x03fe, 0x0516,
+    0x2009, 0x0057, 0x0517, 0x0460, 0x03f6, 0x0461, 0x0518,
+    0x20ac, 0x0720, 0x0779, 0x19d3, 0x0001, 0x8000, 0x03e6, 0x0000,
+    0x0003, 0x8000, 0x0004, 0x8000, 0x00ea, 0x0000, 0x0012, 0x0000,
+    0x056f, 0x012b, 0x001c, 0x0015, 0x0015, 0x00aa, 0x0103,
+    0x00fe, 0x00ff, 0x00ff, 0x0456, 0x0103, 0x044d, 0x0456,
+    0x0457, 0x044c, 0x044e, 0x044f, 0x0450, 0x0962, 0x10f4,
+    0x048d, 0x048e, 0x05aa, 0x0006, 0x0001, 0x0035, 0x054f,
+    0x0554, 0x0120, 0x0554, 0x0057, 0x0057, 0x0032, 0x0558,
+    0x052e, 0x0057, 0x0520, 0x0005, 0x0005, 0x051f, 0x0554,
+    0x078b, 0x06f8, 0x0057, 0x007a, 0x0574, 0x06fe, 0x0057,
+    0x0057, 0x0532, 0x1770, 0x1771, 0x0001, 0x0558, 0x0545,
+    0x0575, 0x0575, 0x0575, 0x0575, 0x13c5, 0x13c6, 0x13c7,
+    0x13c8, 0x13c9, 0x19e5, 0x001f, 0x0001, 0x0057, 0x0018,
+    0x03e6, 0x03e7, 0x05ae, 0x0006, 0x03e9, 0x00c1, 0x0057,
+    0x0057, 0x0000, 0x0002, 0x0000, 0x0002, 0x0000, 0x0001, 0x0000,
+    0x0026, 0x0000, 0x0022, 0x0000, 0x0015, 0x0000, 0x06f9, 0x0000,
+    0x001b, 0x0000, 0x00ea, 0x0000, 0x0008, 0x0000, 0x01e7, 0x0000,
+    0x01e7, 0x0000, 0x0057, 0x0000, 0x0057, 0x0000, 0x0001, 0x0000,
+    0x001d, 0xc000, 0x0005, 0x0000, 0x0005, 0x0000, 0x00c1, 0x0000,
+    0x0005, 0x0000, 0x0005, 0x0000, 0x007a, 0x0000, 0x0006, 0x0000,
+    0x0025, 0xc000, 0x0026, 0xc000, 0x009e, 0x0000, 0x002b, 0xc000,
+    0x01e7, 0x0000, 0x01e7, 0x0000, 0x0057, 0x0571, 0x007b,
+    0x0002, 0x00b7, 0x0006, 0x00a1, 0x0000, 0x0003, 0x0000,
+    0x00a1, 0x0000, 0x045d, 0x0000, 0x045d, 0x0000, 0x0017, 0x0000,
+    0x0017, 0x0000, 0x0008, 0x0000, 0x0005, 0x0000, 0x0006, 0x0000,
+    0x0020, 0x0000, 0x0718, 0x0000, 0x0057, 0x0000, 0x0120, 0x0000,
+    0x012a, 0x0000, 0x0057, 0x0000, 0x0057, 0x0000, 0x009c, 0x0000,
+    0x0005, 0x0000, 0x0057, 0x0000, 0x0057, 0x0000, 0x0057, 0x0000,
+    0x011a, 0x0000, 0x00ff, 0x0000, 0x0570, 0x0000, 0x0570, 0x0000,
+    0x0570, 0x0000, 0x0021, 0x0000, 0x0021, 0x0000, 0x0005, 0x0000,
+    0x0032, 0x0000, 0x0519, 0x0000, 0x051a, 0x0000, 0x051b, 0x0000,
+    0x051c, 0x0000, 0x051d, 0x0000, 0x051e, 0x0000, 0x051f, 0x0000,
+    0x0520, 0x0000, 0x0521, 0x0000, 0x0522, 0x0000, 0x0523, 0x0000,
+    0x0524, 0x0000, 0x0525, 0x0000, 0x0526, 0x0000, 0x0527, 0x0000,
+    0x0528, 0x0000, 0x0529, 0x0000, 0x052a, 0x0000, 0x0056, 0x0000,
+    0x052c, 0x0000, 0x052d, 0x0000, 0x052e, 0x0000, 0x052f, 0x0000,
+    0x0530, 0x0000, 0x0531, 0x0000, 0x0532, 0x0000, 0x0533, 0x0000,
+    0x0534, 0x0000, 0x0535, 0x0000, 0x0536, 0x0000, 0x0537, 0x0000,
+    0x0538, 0x0000, 0x0539, 0x0000, 0x053a, 0x0000, 0x007f, 0x0000,
+    0x00c1, 0x0000, 0x03f0, 0x0000, 0x053c, 0x0000, 0x009e, 0x0000,
+    0x0070, 0x0000, 0x053d, 0x0000, 0x053e, 0x0000, 0x0044, 0x0000,
+    0x0103, 0x0000, 0x053f, 0x0000, 0x0103, 0x0000, 0x009a, 0x0000,
+    0x000e, 0x0000, 0x01e7, 0x0000, 0x0714, 0x0000, 0x0715, 0x0000,
+    0x0716, 0x0000, 0x008c, 0xc000, 0x008d, 0xc000, 0x008e, 0xc000,
+    0x008f, 0xc000, 0x0090, 0xc000, 0x0091, 0xc000, 0x0092, 0xc000,
+    0x0093, 0xc000, 0x0094, 0xc000, 0x0216, 0x0000, 0x0096, 0xc000,
+    0x0008, 0x0000, 0x03ee, 0x0000, 0x0540, 0x0000, 0x05aa, 0x0000,
+    0x0003, 0x0000, 0x0017, 0x0000, 0x048f, 0x0000, 0x0015, 0x0000,
+    0x01e7, 0x0000, 0x01e7, 0x0000, 0x05ad, 0x0000, 0x0013, 0x0000,
+    0x0015, 0x0000, 0x0541, 0x0000, 0x0542, 0x0000, 0x0543, 0x0000,
+    0x0544, 0x0000, 0x0545, 0x0000, 0x0057, 0x0000, 0x00e7,
+    0x00e7, 0x00e6, 0x00e7, 0x0001, 0x00e9, 0x00e8, 0x0217,
+    0x0218, 0x00e6, 0x0079, 0x0026, 0x0005, 0x0032, 0x0033,
+    0x0034, 0x0035, 0x0036, 0x0037, 0x0038, 0x0039, 0x003a,
+    0x003b, 0x003c, 0x003d, 0x003e, 0x003f, 0x0040, 0x0041,
+    0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048,
+    0x0058, 0x0011, 0x0005, 0x00f0, 0x0546, 0x00e8, 0x0547,
+    0x0548, 0x0549, 0x054a, 0x054b, 0x054c, 0x054d, 0x012c,
+    0x012d, 0x054e, 0x054f, 0x0550, 0x0551, 0x06f8, 0x045d,
+    0x0552, 0x0553, 0x0057, 0x0057, 0x0057, 0x0057, 0x0057,
+    0x0057, 0x0057, 0x0057, 0x0057, 0x0057, 0x0057, 0x0057,
+    0x0003, 0x0420, 0x03e9, 0x0554, 0x00cb, 0x0091, 0x0570,
+    0x010b, 0x0555, 0x0556, 0x00ce, 0x0961, 0x0964, 0x013d,
+    0x0005, 0x0557, 0x0558, 0x0420, 0x05a4, 0x00c1, 0x0559,
+    0x055a, 0x03ee, 0x0004, 0x03e3, 0x0005, 0x04ba, 0x0005,
+    0x055b, 0x055c, 0x055d, 0x055e, 0x0006, 0x055f, 0x05af,
+    0x00c1, 0x00c1, 0x00c1, 0x00c1, 0x0576, 0x007e, 0x00b6,
+    0x007f, 0x0040, 0x0040, 0x0033, 0x003b, 0x003b, 0x003b,
+    0x003b, 0x045a, 0x007c, 0x0056, 0x006d, 0x03f1, 0x03f8,
+    0x03ed, 0x045e, 0x0560, 0x0561, 0x0562, 0x0563, 0x0564,
+    0x0565, 0x0566, 0x0567, 0x03ef, 0x0568, 0x0569, 0x03f9,
+    0x056a, 0x045d, 0x04db, 0x0459, 0x0462, 0x0463, 0x0464,
+    0x0465, 0x0466, 0x0467, 0x0468, 0x045f, 0x045d, 0x0451,
+    0x0452, 0x0453, 0x0454, 0x0455, 0x0469, 0x0458, 0x056b,
+    0x056c, 0x03fa, 0x03fb, 0x056d, 0x056e, 0x03fc, 0x03fd,
+    0x0057, 0x045d, 0x0016, 0x045d, 0x045d, 0x05de, 0x0013,
+    0x06fa, 0x06fb, 0x06fc, 0x06fd, 0x05dc, 0x05dd, 0x06fe,
+    0x0700, 0x0701, 0x046b, 0x04c3, 0x04c4, 0x05df, 0x070f,
+    0x0710, 0x0711, 0x0712, 0x0572, 0x003b, 0x003b, 0x0717,
+    0x046a, 0x06f8, 0x04be, 0x04be, 0x0044, 0x0034, 0x0040,
+    0x0040, 0x0040, 0x0044, 0x003b, 0x003b, 0x003b, 0x003b,
+    0x003b, 0x003b, 0x003b, 0x0032, 0x0032, 0x17e6, 0x046c,
+    0x00c1, 0x0773, 0x0490, 0x04ff, 0x0057, 0x0000, 0x022a, 0xc000,
+    0x022b, 0xc000, 0x04d5, 0x0492, 0x0774, 0x0775, 0x0006,
+    0x04c9, 0x04ca, 0x04cb, 0x04cc, 0x04cd, 0x04ce, 0x04cf,
+    0x04d0, 0x04d1, 0x04d2, 0x04d3, 0x04d4, 0x04c8, 0x04d6,
+    0x04d7, 0x04d8, 0x00c1, 0x04d4, 0x054f, 0x04d0, 0x0573,
+    0x0422, 0x00b6, 0x007f, 0x0120, 0x0476, 0x10fe, 0x1b8e,
+    0x07d1, 0x04b1, 0x0015, 0x0491, 0x1126, 0x1129, 0x112a,
+    0x1128, 0x0780, 0x0781, 0x00a1, 0x0488, 0x0489, 0x048a,
+    0x048b, 0x048c, 0x0005, 0x0005, 0x0005, 0x0005, 0x0005,
+    0x0005, 0x1777, 0x1778, 0x1772, 0x1068, 0x1069, 0x106a,
+    0x106b, 0x201a, 0x201b, 0x201c, 0x0001, 0x10ff, 0x1100,
+    0x0494, 0x200a, 0x200b, 0x200c, 0x200d, 0x200e, 0x200f,
+    0x2010, 0x2011, 0x2012, 0x2013, 0x2014, 0x2015, 0x2016,
+    0x2017, 0x2018, 0x2019, 0x211e, 0x1127, 0x0651, 0x049a,
+    0x049b, 0x2024, 0x0575, 0x03e6, 0x1075, 0x1076, 0x04ed,
+    0x10e8, 0x2138, 0x04e3, 0x2139, 0x049d, 0x213a, 0x2141,
+    0x2142, 0x2143, 0x2144, 0x2145, 0x2146, 0x2147, 0x2148,
+    0x2149, 0x0032, 0x2151, 0x2152, 0x2153, 0x2154, 0x215d,
+    0x2163, 0x2164, 0x2165, 0x216d, 0x0577, 0x0052, 0x2171, 0x0000,
+    0x2172, 0x0000, 0x0333, 0x8009, 0x0334, 0x8009, 0x0002, 0x0000,
+    0x0335, 0x8009, 0x0336, 0x8009, 0x0337, 0x8009, 0x0338, 0x8009,
+    0x0339, 0x8009, 0x033a, 0x8009, 0x033b, 0x8009, 0x033c, 0x8009,
+    0x033d, 0x8009, 0x033e, 0x8009, 0x0340, 0x8009, 0x0341, 0x8009,
+    0x0342, 0x8009, 0x045b, 0x0000, 0x04e7, 0x0000, 0x04e6, 0x0000,
+    0x106f, 0x0000, 0x1074, 0x0000, 0x106e, 0x0000, 0x012e, 0x0000,
+    0x0305, 0x8003, 0x0306, 0x8003, 0x0307, 0x8003, 0x0308, 0x8003,
+    0x0309, 0x8003, 0x030a, 0x8003, 0x030b, 0x8003, 0x04ef, 0x0000,
+    0x04f0, 0x0000, 0x0348, 0x8009, 0x04e8, 0x0000, 0x0343, 0x8009,
+    0x177d, 0x0000, 0x0504, 0x0001, 0xc009, 0x217c, 0x0000,
+    0x2182, 0x0000, 0x00c1, 0x0000, 0x00c1, 0x0000, 0x0346, 0x8009,
+    0x0572, 0x0000, 0x04ec, 0x04ec, 0x04ec, 0x04ec, 0x04fb,
+    0x04fb, 0x04fc, 0x006b, 0x8010, 0x006c, 0x8010, 0x006f, 0x8010,
+    0x000c, 0x8010, 0x000d, 0x8009, 0x002c, 0x8010, 0x0016, 0x8009,
+    0x002f, 0x8010, 0x04f1, 0x0000, 0x0351, 0x8009, 0x0352, 0x8009,
+    0x0353, 0x8009, 0x0354, 0x8009, 0x0355, 0x8009, 0x0022, 0x8009,
+    0x078c, 0x078d, 0x078e, 0x217b, 0x219d, 0x219f, 0x052e, 0x0000,
+    0x0502, 0x0000, 0x0356, 0x8009, 0x0357, 0x8009, 0x0358, 0x8009,
+    0x0359, 0x8009, 0x035a, 0x8009, 0x035b, 0x8009, 0x0503, 0x0000,
+    0x0505, 0x078f, 0x0506, 0x06a4, 0x06a5, 0x0006, 0x06a7,
+    0x06a8, 0x06a9, 0x06aa, 0x06ab, 0x06ac, 0x06ad, 0x06ae,
+    0x06af, 0x06b0, 0x06b1, 0x06b2, 0x06b3, 0x06b4, 0x06b5,
+    0x06b6, 0x06b7, 0x06b8, 0x06b9, 0x06ba, 0x06bb, 0x06bc,
+    0x06bd, 0x06be, 0x06bf, 0x06c0, 0x06c2, 0x06c4, 0x06c5,
+    0x06c6, 0x06c7, 0x06c8, 0x06c9, 0x06cb, 0x06cc, 0x06cd,
+    0x06ce, 0x06cf, 0x06d0, 0x06d1, 0x06d2, 0x06d3, 0x06d4,
+    0x06d5, 0x06d6, 0x06d7, 0x06d8, 0x06d9, 0x06da, 0x06db,
+    0x06dc, 0x06dd, 0x06de, 0x06df, 0x06e0, 0x06e1, 0x06e2,
+    0x06e3, 0x06e4, 0x06e5, 0x06e6, 0x06e7, 0x06e8, 0x06e9,
+    0x06ea, 0x06eb, 0x06ff, 0x070e, 0x076a, 0x076b, 0x076c,
+    0x0719, 0x071a, 0x071b, 0x071c, 0x071d, 0x071e, 0x071f,
+    0x0721, 0x0722, 0x077a, 0x077b, 0x06ec, 0x06ed, 0x06ee,
+    0x0006, 0x0006, 0x06f1, 0x06f2, 0x06f3, 0x06f4, 0x06f5,
+    0x06f6, 0x06f7, 0x0723, 0x0724, 0x0725, 0x0726, 0x0727,
+    0x0728, 0x077c, 0x077d, 0x077e, 0x1b59, 0x1b5a, 0x1b5b,
+    0x1b5f, 0x1b60, 0x1b61, 0x1b62, 0x1b63, 0x1b64, 0x1b65,
+    0x1b66, 0x1b67, 0x1b68, 0x1b69, 0x1b8f, 0x1b8e, 0x1b90,
+    0x1b6e, 0x1b6f, 0x1b70, 0x1b71, 0x1b7b, 0x1b7e, 0x1b80,
+    0x1b81, 0x1b82, 0x1b84, 0x1b85, 0x1b89, 0x1b5c, 0x1b8a,
+    0x1b8b, 0x1b8d, 0x1b8c, 0x1b92, 0x1b91, 0x13af, 0x13b0,
+    0x13b1, 0x13b2, 0x13b3, 0x13b4, 0x13b5, 0x13b6, 0x13b7,
+    0x13b8, 0x13b9, 0x13ba, 0x13bb, 0x13bc, 0x13bd, 0x13be,
+    0x13c0, 0x13ce, 0x13c2, 0x13c3, 0x13c4, 0x36b0, 0x36b1,
+    0x36b2, 0x36b3, 0x36b4, 0x36b5, 0x36b6, 0x36b7, 0x36b9,
+    0x36ba, 0x36bb, 0x19c8, 0x19c9, 0x19ca, 0x19cb, 0x19cc,
+    0x19cd, 0x19ce, 0x19cf, 0x19d0, 0x19d1, 0x19d2, 0x19d4,
+    0x19d5, 0x19d6, 0x19d7, 0x19d8, 0x19d9, 0x19da, 0x19db,
+    0x19dc, 0x19dd, 0x19de, 0x19df, 0x19e0, 0x19e1, 0x19e2,
+    0x19e3, 0x19e4, 0x19e6, 0x19e7, 0x19e8, 0x19e9, 0x19ea,
+    0x19eb, 0x19ec, 0x19ed, 0x19ee, 0x19ef, 0x19f0, 0x19f1,
+    0x19f2, 0x19f3, 0x19f4, 0x19f5, 0x19f6, 0x0037, 0x0037,
+    0x0037, 0x0000, 0x0 };
+#pragma endregion
+#define NtCurrentProcess()   (HANDLE)-1
+#define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
+#define NtGetTid()           NtGetTeb()->ClientId.UniqueThread  /* GetCurrentThreadId() */
+#define GetLastError()       NtGetTeb()->LastErrorValue         /* GetLastError()*/
+#define SetLastError(err)    NtGetTeb()->LastErrorValue = err   /* SetLastError()*/
+#define GetLastNTError(err)  NtGetTeb()->LastStatusValue
+inline ULONG RtlNtStatusToDosError(NTSTATUS status)
+{
+	if (status & 0x20000000) {
+    	return status;
+    }
+    if ((status & 0xffff0000) == 0x80070000) {
+	    return status & 0x0000ffff;
+    }
+    if ((status & 0xf0000000) == 0xd0000000) {
+	    status &= 0xcfffffff;
+    }
+
+
+    ULONG Entry = 0;
+    ULONG Index = 0;
+    do {
+        if (status >= RtlpRunTable[Entry + 1].BaseCode) {
+            Index += RtlpRunTable[Entry].RunLength * RtlpRunTable[Entry].CodeSize;
+
+        }
+        else {
+            ULONG Offset = status - RtlpRunTable[Entry].BaseCode;
+            if (Offset >= RtlpRunTable[Entry].RunLength) {
+                break;
+
+            }
+            Index += (Offset * (ULONG)RtlpRunTable[Entry].CodeSize);
+            if (RtlpRunTable[Entry].CodeSize == 1) {
+	            return RtlpStatusTable[Index];
+
+            }
+            return (ULONG)RtlpStatusTable[Index + 1] << 16 |
+	            (ULONG)RtlpStatusTable[Index];
+        }
+
+        Entry += 1;
+    } while (Entry < (sizeof(RtlpRunTable) / sizeof(RUN_ENTRY)));
+
+
+    if (status >> 16 == 0xC001) {
+        return status & 0xFFFF;
+    }
+#define ERROR_MR_MID_NOT_FOUND           317L
+
+    return ERROR_MR_MID_NOT_FOUND;
+}
+#define SetLastNTError(err)  do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; teb->LastErrorValue = RtlNtStatusToDosError(err); } while(0)
+inline PTEB NtGetTeb()
+{
+    static PTEB Teb;
+
+    if (Teb) return Teb;
+#if defined(_M_X64)
+    Teb = (PTEB)(__readgsqword(0x30));
+#elif defined(_M_IX86)
+    Teb = (PTEB)(__readfsdword(0x18));
+#elif defined(_M_ARM)
+    Teb = *(PTEB)(_MoveFromCoprocessor(15, 0, 13, 0, 2));
+#elif defined(_M_ARM64)
+    Teb = *(PTEB*)(__getReg(18)); // TEB in x18
+#elif defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_PPC)
+    Teb = *(PTEB*)((size_t)_rdteb()); // TEB in r13
+#elif defined(_M_MIPS)
+    Teb = *(PTEB*)(__gregister_get(13)); // TEB in r13
+#endif
+    return Teb;
+}
 inline PPEB NtGetPeb()
 {
-#ifdef _M_X64
-    return (PPEB)(__readgsqword(0x60));
-#elif _M_IX86
-    return (PPEB)(__readfsdword(0x30));
-#elif _M_ARM
-    return *(PPPEB)(_MoveFromCoprocessor(15, 0, 13, 0, 2) + 0x30);
-#elif _M_ARM64
-    return *(PPEB*)(__getReg(18) + 0x60); // TEB in x18
-#elif _M_IA64
-    return *(PPEB*)((size_t)_rdteb() + 0x60); // TEB in r13
-#elif _M_ALPHA
-    return *(PPEB*)((size_t)_rdteb() + 0x30); // TEB pointer returned from callpal 0xAB
-#elif _M_MIPS
-    return *(PPEB*)(__gregister_get(13) + 0x30); // TEB in r13
-#endif
+    static PPEB Peb;
+    if(!Peb) Peb = NtGetTeb()->ProcessEnvironmentBlock;
+    return Peb;
 }
+
+extern void cpu_detect_features(void);
+extern NTSTATUS(__stdcall* NtClose)(HANDLE Handle);

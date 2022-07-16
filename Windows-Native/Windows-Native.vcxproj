@@ -24,6 +24,7 @@
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Native\API\Library.h" />
     <ClInclude Include="Native\API\Loader.h" />
+    <ClInclude Include="System\File\File.h" />
     <ClInclude Include="System\Process\Process.h" />
     <ClInclude Include="System\Registry\Registry.h" />
   </ItemGroup>
@@ -33,6 +34,7 @@
     <ClCompile Include="Memory\Memory.c" />
     <ClCompile Include="Native\API\Library.c" />
     <ClCompile Include="Native\API\Loader.c" />
+    <ClCompile Include="System\File\File.c" />
     <ClCompile Include="System\Process\Process.c" />
     <ClCompile Include="System\Registry\Registry.c" />
   </ItemGroup>
@@ -121,6 +123,7 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -183,6 +186,7 @@
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <FloatingPointExceptions>false</FloatingPointExceptions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <SubSystem>
