@@ -21,7 +21,7 @@ BOOL parseFileName(struct Loader_Module mod, wchar_t* dllName)
 {
 	if (!dllName) return false;
 	mod.dllName = dllName;
-	mod.cDllName = NativeLib.Memory.Allocate(MAX_PATH * 2, TRUE);
+	mod.cDllName = NativeLib.Memory.AllocateHeap(MAX_PATH * 2, TRUE);
 	if (!mod.cDllName) { __debugbreak();  return FALSE; } // No memory?
 	LPWSTR fileName = PathFindFileNameW(dllName);
 	wstrcpy(mod.cDllName, fileName);

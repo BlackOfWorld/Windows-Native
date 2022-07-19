@@ -9,10 +9,12 @@ extern void NativeInit(void);
 
 struct Memory
 {
-	PVOID(*Allocate)(DWORD uSize, BOOL zeroMem);
+	PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
+	PVOID(*AllocateVirtual)(DWORD dwSize, DWORD AllocFlags, DWORD Protect);
 	PVOID(*GetCurrentHeap)(void);
 	DWORD(*GetCurrentHeaps)(void);
-	BOOLEAN(*Free)(PVOID Address);
+	BOOLEAN(*FreeHeap)(PVOID Address);
+	BOOLEAN(*FreeVirtual)(PVOID Address, SIZE_T dwSize, DWORD FreeType);
 };
 
 struct Process

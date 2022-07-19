@@ -18,14 +18,50 @@
 #define HEAP_CREATE_SEGMENT_HEAP        0x00000100
 #define HEAP_CREATE_HARDENED            0x00000200
 
-PVOID Memory_Allocate(DWORD uSize, BOOL zeroMem)
+PVOID Memory_AllocateHeap(DWORD dwSize, BOOL zeroMem)
 {
 	//static NTSTATUS(__stdcall * NtMapViewOfSection)(HANDLE SectionHandle, HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, SIZE_T CommitSize, PLARGE_INTEGER SectionOffset, PSIZE_T ViewSize, SECTION_INHERIT InheritDisposition, ULONG AllocationType, ULONG Protect);
 	//if (!NtMapViewOfSection) NtMapViewOfSection = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtMapViewOfSection");
 	//NtMapViewOfSection()
 	static PVOID(_stdcall * RtlAllocateHeap)(PVOID HeapHandle, ULONG Flags, SIZE_T Size);
 	if (!RtlAllocateHeap) RtlAllocateHeap = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlAllocateHeap");
-	return RtlAllocateHeap(Memory.GetCurrentHeap(), zeroMem ? HEAP_ZERO_MEMORY : 0, uSize);
+	return RtlAllocateHeap(Memory.GetCurrentHeap(), zeroMem ? HEAP_ZERO_MEMORY : 0, dwSize);
+}
+PVOID Memory_AllocateVirtual(DWORD dwSize, DWORD AllocFlags, DWORD Protect)
+{
+	static NTSTATUS(__stdcall * NtAllocateVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, PSIZE_T RegionSize, ULONG AllocationType, ULONG Protect);
+	if (!NtAllocateVirtualMemory) NtAllocateVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtAllocateVirtualMemory");
+	LPVOID address = NULL;
+	NTSTATUS status = NtAllocateVirtualMemory(NtCurrentProcess(), &address, 0, &dwSize, AllocFlags & 0xFFFFFFC0, Protect);
+	if (NT_SUCCESS(status)) return address;
+	SetLastNTError(status);
+	return NULL;
+}
+
+BOOLEAN Memory_FreeVirtual(LPVOID Address, SIZE_T dwSize, DWORD FreeType)
+{
+	if (!dwSize || !(FreeType & MEM_RELEASE))
+	{
+		SetLastNTError(STATUS_INVALID_PARAMETER);
+		return false;
+	}
+	static NTSTATUS(__stdcall* NtFreeVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, PSIZE_T RegionSize, ULONG FreeType);
+	static BOOLEAN(__stdcall * RtlFlushSecureMemoryCache)(PVOID MemoryCache, SIZE_T MemoryLength);
+	if (!NtFreeVirtualMemory) NtFreeVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtFreeVirtualMemory");
+	if(!RtlFlushSecureMemoryCache) RtlFlushSecureMemoryCache = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlFlushSecureMemoryCache");
+	NTSTATUS status = NtFreeVirtualMemory(NtCurrentProcess(), &Address, &dwSize, FreeType);
+	if(status == STATUS_INVALID_PAGE_PROTECTION)
+	{
+		if(!RtlFlushSecureMemoryCache(Address, dwSize))
+		{
+			SetLastNTError(status);
+			return false;
+		}
+		status = NtFreeVirtualMemory(NtCurrentProcess(), &Address, &dwSize, FreeType);
+	}
+	if (NT_SUCCESS(status)) return true;
+	SetLastNTError(status);
+	return false;
 }
 BOOLEAN Memory_FreeHeap(PVOID Address)
 {
@@ -48,8 +84,10 @@ DWORD Memory_GetCurrentHeaps(void) {
 
 
 struct Memory Memory = {
-	.Allocate = &Memory_Allocate,
+	.AllocateHeap = &Memory_AllocateHeap,
+	.AllocateVirtual = &Memory_AllocateVirtual,
 	.GetCurrentHeap = &Memory_GetCurrentHeap,
 	.GetCurrentHeaps = &Memory_GetCurrentHeaps,
-	.Free = &Memory_FreeHeap
+	.FreeHeap = &Memory_FreeHeap,
+	.FreeVirtual = &Memory_FreeVirtual
 };
