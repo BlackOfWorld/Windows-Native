@@ -10,9 +10,7 @@ EXTERNC IMAGE_DOS_HEADER __ImageBase;
 void* Library_GetModule(const WCHAR* dllName)
 {
 	PPEB pPeb = NtGetPeb();
-	if (dllName == NULL || dllName[0] == L'\0') return pPeb->ImageBaseAddress;
-	//PLDR_DATA_TABLE_ENTRY pModuleList = (PLDR_DATA_TABLE_ENTRY*)->InLoadOrderModuleList.Flink;
-	//pModuleList =
+	if (!dllName || !dllName[0]) return pPeb->ImageBaseAddress;
 	PPEB_LDR_DATA pLdr = pPeb->Ldr;
 	for (PLIST_ENTRY list = pLdr->InLoadOrderModuleList.Flink; list != &pLdr->InLoadOrderModuleList; list = list->Flink) {
 		PLDR_DATA_TABLE_ENTRY pEntry = CONTAINING_RECORD(list, LDR_DATA_TABLE_ENTRY, InLoadOrderLinks);

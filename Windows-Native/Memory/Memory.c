@@ -33,8 +33,8 @@ PVOID Memory_AllocateVirtual(DWORD dwSize, DWORD AllocFlags, DWORD Protect)
 	if (!NtAllocateVirtualMemory) NtAllocateVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtAllocateVirtualMemory");
 	LPVOID address = NULL;
 	NTSTATUS status = NtAllocateVirtualMemory(NtCurrentProcess(), &address, 0, &dwSize, AllocFlags & 0xFFFFFFC0, Protect);
-	if (NT_SUCCESS(status)) return address;
 	SetLastNTError(status);
+	if (NT_SUCCESS(status)) return address;
 	return NULL;
 }
 
@@ -59,8 +59,8 @@ BOOLEAN Memory_FreeVirtual(LPVOID Address, SIZE_T dwSize, DWORD FreeType)
 		}
 		status = NtFreeVirtualMemory(NtCurrentProcess(), &Address, &dwSize, FreeType);
 	}
-	if (NT_SUCCESS(status)) return true;
 	SetLastNTError(status);
+	if (NT_SUCCESS(status)) return true;
 	return false;
 }
 BOOLEAN Memory_FreeHeap(PVOID Address)

@@ -426,11 +426,11 @@ typedef struct _LIST_ENTRY {
 	struct _LIST_ENTRY* Flink;
 	struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, * PLIST_ENTRY;
-struct _CLIENT_ID
+typedef struct _CLIENT_ID
 {
     VOID* UniqueProcess;
     VOID* UniqueThread;
-};
+} CLIENT_ID, *PCLIENT_ID;
 
 typedef struct _UNICODE_STRING {
 	unsigned short	Length;
@@ -2172,7 +2172,7 @@ static const USHORT RtlpStatusTable[] = {
     0x19f2, 0x19f3, 0x19f4, 0x19f5, 0x19f6, 0x0037, 0x0037,
     0x0037, 0x0000, 0x0 };
 #pragma endregion
-#define NtCurrentProcess()   (HANDLE)-1
+#define NtCurrentProcess()   ((HANDLE)(LONG_PTR)-1)
 #define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
 #define NtGetTid()           NtGetTeb()->ClientId.UniqueThread  /* GetCurrentThreadId() */
 #define GetLastError()       NtGetTeb()->LastErrorValue         /* GetLastError()*/
@@ -2224,6 +2224,9 @@ inline ULONG RtlNtStatusToDosError(NTSTATUS status)
 
     return ERROR_MR_MID_NOT_FOUND;
 }
+#define INVALID_HANDLE_VALUE             ((HANDLE)(LONG_PTR)-1)
+#define ERROR_INVALID_PARAMETER          87L
+#define SetLastNTStatus(err) do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; } while(0)
 #define SetLastNTError(err)  do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; teb->LastErrorValue = RtlNtStatusToDosError(err); } while(0)
 inline PTEB NtGetTeb()
 {

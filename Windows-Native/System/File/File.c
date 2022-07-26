@@ -1,27 +1,167 @@
 #include "File.h"
+#define ERROR_PATH_NOT_FOUND             3
+#define CREATE_NEW						 1
+#define CREATE_ALWAYS					 2
+#define OPEN_EXISTING					 3
+#define OPEN_ALWAYS						 4
+#define TRUNCATE_EXISTING				 5
+
+#define FILE_DIRECTORY_FILE                     0x00000001
+#define FILE_WRITE_THROUGH                      0x00000002
+#define FILE_SEQUENTIAL_ONLY                    0x00000004
+#define FILE_NO_INTERMEDIATE_BUFFERING          0x00000008
+#define FILE_SYNCHRONOUS_IO_ALERT               0x00000010
+#define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
+#define FILE_NON_DIRECTORY_FILE                 0x00000040
+#define FILE_CREATE_TREE_CONNECTION             0x00000080
+#define FILE_COMPLETE_IF_OPLOCKED               0x00000100
+#define FILE_NO_EA_KNOWLEDGE                    0x00000200
+#define FILE_OPEN_REMOTE_INSTANCE               0x00000400
+#define FILE_RANDOM_ACCESS                      0x00000800
+#define FILE_DELETE_ON_CLOSE                    0x00001000
+#define FILE_OPEN_BY_FILE_ID                    0x00002000
+#define FILE_OPEN_FOR_BACKUP_INTENT             0x00004000
+#define FILE_NO_COMPRESSION                     0x00008000
+#define FILE_RESERVE_OPFILTER                   0x00100000
+#define FILE_OPEN_REPARSE_POINT                 0x00200000
+#define FILE_OPEN_NO_RECALL                     0x00400000
+#define FILE_OPEN_FOR_FREE_SPACE_QUERY          0x00800000
+#define FILE_COPY_STRUCTURED_STORAGE            0x00000041
+#define FILE_STRUCTURED_STORAGE                 0x00000441
+
+#define FILE_SUPERSEDE							0x00000000
+#define FILE_OPEN								0x00000001
+#define FILE_CREATE								0x00000002
+#define FILE_OPEN_IF							0x00000003
+#define FILE_OVERWRITE							0x00000004
+#define FILE_OVERWRITE_IF						0x00000005
+#define FILE_MAXIMUM_DISPOSITION				0x00000005
+
+#define FILE_FLAG_WRITE_THROUGH					0x80000000
+#define FILE_FLAG_OVERLAPPED					0x40000000
+#define FILE_FLAG_NO_BUFFERING					0x20000000
+#define FILE_FLAG_RANDOM_ACCESS					0x10000000
+#define FILE_FLAG_SEQUENTIAL_SCAN				0x08000000
+#define FILE_FLAG_DELETE_ON_CLOSE				0x04000000
+#define FILE_FLAG_BACKUP_SEMANTICS				0x02000000
+#define FILE_FLAG_POSIX_SEMANTICS				0x01000000
+#define FILE_FLAG_SESSION_AWARE					0x00800000
+#define FILE_FLAG_OPEN_REPARSE_POINT			0x00200000
+#define FILE_FLAG_OPEN_NO_RECALL				0x00100000
+#define FILE_FLAG_FIRST_PIPE_INSTANCE			0x00080000
+#define FILE_ATTRIBUTE_VALID_FLAGS              0x00007fb7
+#define FILE_ATTRIBUTE_VALID_SET_FLAGS          0x000031a7
+#define FILE_ATTRIBUTE_DIRECTORY			    0x00000010
+#define FILE_READ_ATTRIBUTES      				0x0080
 
 static NTSTATUS(__stdcall* NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass) = NULL;
 PHANDLE File_Open()
 {
+
 }
 
-PHANDLE File_Create()
+PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes)
 {
-};
+	static NTSTATUS(__stdcall * NtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength);
+	if (!NtCreateFile) NtCreateFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtCreateFile");
+	HANDLE handle = NULL;
+	ULONG FileAttributes = 0;
+	ULONG Flags = 0;
+	if (!fileName || !fileName[0])
+	{
+		SetLastNTStatus(STATUS_INVALID_PARAMETER);
+		SetLastError(ERROR_PATH_NOT_FOUND);
+		return INVALID_HANDLE_VALUE;
+	}
+	switch (CreationDisposition)
+	{
+	case CREATE_NEW:
+		CreationDisposition = FILE_CREATE;
+		break;
+	case CREATE_ALWAYS:
+		CreationDisposition = FILE_OVERWRITE_IF;
+		break;
+	case OPEN_EXISTING:
+		CreationDisposition = FILE_OPEN;
+		break;
+	case OPEN_ALWAYS:
+		CreationDisposition = FILE_OPEN_IF;
+		break;
+	case TRUNCATE_EXISTING:
+		CreationDisposition = FILE_OVERWRITE;
+		break;
+	default:
+		SetLastError(ERROR_INVALID_PARAMETER);
+		return INVALID_HANDLE_VALUE;
+	}  if (!(FlagsAndAttributes & FILE_FLAG_OVERLAPPED))
+	{
+		/* yes, nonalert is correct! apc's are not delivered
+		while waiting for file io to complete */
+		Flags |= FILE_SYNCHRONOUS_IO_NONALERT;
+	}
+
+	if (FlagsAndAttributes & FILE_FLAG_WRITE_THROUGH)
+		Flags |= FILE_WRITE_THROUGH;
+
+	if (FlagsAndAttributes & FILE_FLAG_NO_BUFFERING)
+		Flags |= FILE_NO_INTERMEDIATE_BUFFERING;
+
+	if (FlagsAndAttributes & FILE_FLAG_RANDOM_ACCESS)
+		Flags |= FILE_RANDOM_ACCESS;
+
+	if (FlagsAndAttributes & FILE_FLAG_SEQUENTIAL_SCAN)
+		Flags |= FILE_SEQUENTIAL_ONLY;
+
+	if (FlagsAndAttributes & FILE_FLAG_DELETE_ON_CLOSE)
+	{
+		Flags |= FILE_DELETE_ON_CLOSE;
+		FlagsAndAttributes |= DELETE;
+	}
+
+	if (FlagsAndAttributes & FILE_FLAG_BACKUP_SEMANTICS)
+	{
+		if (FlagsAndAttributes & GENERIC_ALL)
+			Flags |= FILE_OPEN_FOR_BACKUP_INTENT | FILE_OPEN_REMOTE_INSTANCE;
+		else
+		{
+			if (FlagsAndAttributes & GENERIC_READ)
+				Flags |= FILE_OPEN_FOR_BACKUP_INTENT;
+
+			if (FlagsAndAttributes & GENERIC_WRITE)
+				Flags |= FILE_OPEN_REMOTE_INSTANCE;
+		}
+	}
+	else
+		Flags |= FILE_NON_DIRECTORY_FILE;
+
+	if (FlagsAndAttributes & FILE_FLAG_OPEN_REPARSE_POINT)
+		Flags |= FILE_OPEN_REPARSE_POINT;
+
+	if (FlagsAndAttributes & FILE_FLAG_OPEN_NO_RECALL)
+		Flags |= FILE_OPEN_NO_RECALL;
+
+	FileAttributes = (FlagsAndAttributes & (FILE_ATTRIBUTE_VALID_FLAGS & ~FILE_ATTRIBUTE_DIRECTORY));
+
+	/* handle may always be waited on and querying attributes are always allowed */
+	FlagsAndAttributes |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
+
+	//TODO: Validate and translate from DOS Path to NTPath
+	NTSTATUS status = NtCreateFile(&handle, )
+}
 INT64 File_GetSize(HANDLE hFile)
 {
-	if(!NtQueryInformationFile) NtQueryInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryInformationFile");
+	if (!NtQueryInformationFile) NtQueryInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryInformationFile");
 	FILE_STANDARD_INFORMATION FileStandard;
 	IO_STATUS_BLOCK IoStatusBlock;
 
 	NTSTATUS errCode = NtQueryInformationFile(hFile,
-	                                          &IoStatusBlock,
-	                                          &FileStandard,
-	                                          sizeof(FILE_STANDARD_INFORMATION),
-	                                          FileStandardInformation);
+		&IoStatusBlock,
+		&FileStandard,
+		sizeof(FILE_STANDARD_INFORMATION),
+		FileStandardInformation);
+	SetLastNTError(errCode);
 	if (NT_ERROR(errCode))
 	{
-		SetLastNTError(errCode);
 		return -1;
 	}
 
@@ -29,7 +169,9 @@ INT64 File_GetSize(HANDLE hFile)
 }
 BOOL File_Close(HANDLE hFile)
 {
-	return NtClose(hFile) == 0;
+	NTSTATUS status = NtClose(hFile);
+	SetLastNTError(status);
+	return status == 0;
 }
 struct File File = {
 	.Open = &File_Open,

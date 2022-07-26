@@ -57,7 +57,10 @@ DWORD Process_Exists(const WCHAR* processName)
 	ULONG Size = 0;
 	DWORD pId = -1;
 	if (NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, NULL, NULL, &Size)))
+	{
+		SetLastNTError(status);
 		return -1;
+	}
 	PVOID buffer = NativeLib.Memory.AllocateVirtual(Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 	if (!buffer)
 	{
@@ -67,6 +70,7 @@ DWORD Process_Exists(const WCHAR* processName)
 	PSYSTEM_PROCESS_INFORMATION psi = buffer;
 	if (!NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, psi, Size, NULL)))
 	{
+		SetLastNTError(status);
 		NativeLib.Memory.FreeVirtual(buffer, Size, MEM_RELEASE);
 		return -1;
 	}
