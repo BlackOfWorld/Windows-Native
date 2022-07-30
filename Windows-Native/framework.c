@@ -36,7 +36,7 @@ void cpu_detect_features(void)
 	uint32_t maxFunc = eax;
 	//cpuid(0x80000000, &eax, &ebx, &ecx, &edx);
 	//uint32_t maxFuncExtend = eax;
-	if(maxFunc >= 1)
+	if (maxFunc >= 1)
 	{
 		cpuid(1, &eax, &ebx, &ecx, &edx);
 		SetFeature(SSE, edx);
@@ -56,3 +56,19 @@ void cpu_detect_features(void)
 }
 #undef SetFeature
 #endif
+
+NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString)
+{
+	const size_t MaxSize = (USHRT_MAX & ~1) - sizeof(WCHAR);
+
+	DestinationString->Length = 0;
+	DestinationString->MaximumLength = 0;
+	DestinationString->Buffer = (PWCHAR)SourceString;
+	if (!SourceString) return STATUS_SUCCESS;
+
+	size_t Size = strlenW(SourceString) * sizeof(WCHAR);
+	if (Size > MaxSize) return STATUS_NAME_TOO_LONG;
+	DestinationString->Length = (USHORT)Size;
+	DestinationString->MaximumLength = (USHORT)Size + sizeof(WCHAR);
+	return STATUS_SUCCESS;
+}

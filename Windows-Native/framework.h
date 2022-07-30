@@ -134,6 +134,18 @@ typedef LONG_PTR SSIZE_T, * PSSIZE_T;
 #define HIWORD(l)           ((WORD)((((DWORD_PTR)(l)) >> 16) & 0xffff))
 #define LOBYTE(w)           ((BYTE)(((DWORD_PTR)(w)) & 0xff))
 #define HIBYTE(w)           ((BYTE)((((DWORD_PTR)(w)) >> 8) & 0xff))
+#define SHRT_MIN (-32768)
+#define SHRT_MAX 32767
+#define USHRT_MAX 0xffff
+#define INT_MIN (-2147483647 - 1)
+#define INT_MAX 2147483647
+#define UINT_MAX 0xffffffff
+#define LONG_MIN (-2147483647L - 1)
+#define LONG_MAX 2147483647L
+#define ULONG_MAX 0xffffffffUL
+#define LLONG_MAX 9223372036854775807LL
+#define LLONG_MIN (-9223372036854775807LL - 1)
+#define ULLONG_MAX 0xffffffffffffffffULL
 typedef double DOUBLE;
 typedef unsigned char BYTE, * PBYTE, * LPBYTE;
 typedef unsigned char UCHAR, * PUCHAR;
@@ -188,6 +200,7 @@ typedef HANDLE* PHANDLE;
 typedef HANDLE HINSTANCE;
 typedef HINSTANCE HMODULE;
 
+
 typedef wchar_t WCHAR;
 typedef const WCHAR* LPCWCH, * PCWCH;
 typedef WCHAR* NWPSTR, * LPWSTR, * PWSTR;
@@ -235,6 +248,9 @@ typedef KSPIN_LOCK* PKSPIN_LOCK;
 typedef DWORD NTSTATUS;
 
 //error codes
+#define ERROR_SUCCESS                     0L
+
+#define STATUS_SUCCESS                    ((DWORD)0x00000000L)
 #define STATUS_WAIT_0                     ((DWORD)0x00000000L)
 #define STATUS_ABANDONED_WAIT_0           ((DWORD)0x00000080L)
 #define STATUS_USER_APC                   ((DWORD)0x000000C0L)
@@ -242,6 +258,7 @@ typedef DWORD NTSTATUS;
 #define STATUS_PENDING                    ((DWORD)0x00000103L)
 #define DBG_EXCEPTION_HANDLED             ((DWORD)0x00010001L)
 #define DBG_CONTINUE                      ((DWORD)0x00010002L)
+#define ERROR_MR_MID_NOT_FOUND            ((DWORD)0x0000013DL)
 #define STATUS_SEGMENT_NOTIFICATION       ((DWORD)0x40000005L)
 #define STATUS_FATAL_APP_EXIT             ((DWORD)0x40000015L)
 #define DBG_REPLY_LATER                   ((DWORD)0x40010001L)
@@ -264,11 +281,12 @@ typedef DWORD NTSTATUS;
 #define STATUS_IN_PAGE_ERROR              ((DWORD)0xC0000006L)
 #define STATUS_INVALID_HANDLE             ((DWORD)0xC0000008L)
 #define STATUS_INVALID_PARAMETER          ((DWORD)0xC000000DL)
-#define STATUS_INVALID_PAGE_PROTECTION    ((DWORD)0xC0000045)
+#define STATUS_INVALID_PAGE_PROTECTION    ((DWORD)0xC0000045L)
 #define STATUS_NO_MEMORY                  ((DWORD)0xC0000017L)
 #define STATUS_ILLEGAL_INSTRUCTION        ((DWORD)0xC000001DL)
 #define STATUS_NONCONTINUABLE_EXCEPTION   ((DWORD)0xC0000025L)
 #define STATUS_INVALID_DISPOSITION        ((DWORD)0xC0000026L)
+#define STATUS_OBJECT_NAME_COLLISION      ((DWORD)0xC0000035L)
 #define STATUS_ARRAY_BOUNDS_EXCEEDED      ((DWORD)0xC000008CL)
 #define STATUS_FLOAT_DENORMAL_OPERAND     ((DWORD)0xC000008DL)
 #define STATUS_FLOAT_DIVIDE_BY_ZERO       ((DWORD)0xC000008EL)
@@ -280,7 +298,9 @@ typedef DWORD NTSTATUS;
 #define STATUS_INTEGER_DIVIDE_BY_ZERO     ((DWORD)0xC0000094L)
 #define STATUS_INTEGER_OVERFLOW           ((DWORD)0xC0000095L)
 #define STATUS_PRIVILEGED_INSTRUCTION     ((DWORD)0xC0000096L)
+#define STATUS_FILE_IS_A_DIRECTORY        ((DWORD)0xC00000BAL)
 #define STATUS_STACK_OVERFLOW             ((DWORD)0xC00000FDL)
+#define STATUS_NAME_TOO_LONG              ((DWORD)0xC0000106L)
 #define STATUS_DLL_NOT_FOUND              ((DWORD)0xC0000135L)
 #define STATUS_ORDINAL_NOT_FOUND          ((DWORD)0xC0000138L)
 #define STATUS_ENTRYPOINT_NOT_FOUND       ((DWORD)0xC0000139L)
@@ -1171,6 +1191,25 @@ typedef struct _IMAGE_ROM_HEADERS {
     IMAGE_FILE_HEADER FileHeader;
     IMAGE_ROM_OPTIONAL_HEADER OptionalHeader;
 } IMAGE_ROM_HEADERS, * PIMAGE_ROM_HEADERS;
+
+#define OBJ_INHERIT                             0x00000002L
+#define OBJ_PERMANENT                           0x00000010L
+#define OBJ_EXCLUSIVE                           0x00000020L
+#define OBJ_CASE_INSENSITIVE                    0x00000040L
+#define OBJ_OPENIF                              0x00000080L
+#define OBJ_OPENLINK                            0x00000100L
+#define OBJ_KERNEL_HANDLE                       0x00000200L
+#define OBJ_FORCE_ACCESS_CHECK                  0x00000400L
+#define OBJ_VALID_ATTRIBUTES                    0x000007F2L
+
+#define InitializeObjectAttributes(p,n,a,r,s) do { \
+    (p)->Length = sizeof(OBJECT_ATTRIBUTES);    \
+    (p)->RootDirectory = (r);                   \
+    (p)->Attributes = (a);                      \
+    (p)->ObjectName = (n);                      \
+    (p)->SecurityDescriptor = (s);              \
+    (p)->SecurityQualityOfService = NULL;       \
+} while(0)
 typedef struct _OBJECT_ATTRIBUTES {
     ULONG           Length;
     HANDLE          RootDirectory;
@@ -1178,7 +1217,8 @@ typedef struct _OBJECT_ATTRIBUTES {
     ULONG           Attributes;
     PVOID           SecurityDescriptor;
     PVOID           SecurityQualityOfService;
-} OBJECT_ATTRIBUTES, POBJECT_ATTRIBUTES;
+} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+
 #ifdef _WIN64
 typedef IMAGE_NT_HEADERS64                  IMAGE_NT_HEADERS;
 typedef PIMAGE_NT_HEADERS64                 PIMAGE_NT_HEADERS;
@@ -2220,7 +2260,7 @@ inline ULONG RtlNtStatusToDosError(NTSTATUS status)
     if (status >> 16 == 0xC001) {
         return status & 0xFFFF;
     }
-#define ERROR_MR_MID_NOT_FOUND           317L
+
 
     return ERROR_MR_MID_NOT_FOUND;
 }
@@ -2257,3 +2297,4 @@ inline PPEB NtGetPeb()
 
 extern void cpu_detect_features(void);
 extern NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
+extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);

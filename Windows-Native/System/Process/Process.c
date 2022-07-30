@@ -50,10 +50,9 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 
 DWORD Process_Exists(const WCHAR* processName)
 {
-	__debugbreak();
 	static NTSTATUS(__stdcall * NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
 	if (!NtQuerySystemInformation) NtQuerySystemInformation = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQuerySystemInformation");
-	NTSTATUS status = 0;
+	NTSTATUS status;
 	ULONG Size = 0;
 	DWORD pId = -1;
 	if (NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, NULL, NULL, &Size)))

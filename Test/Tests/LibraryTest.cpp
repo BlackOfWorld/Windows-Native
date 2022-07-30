@@ -10,45 +10,45 @@ extern "C" {
 
 TEST(Library, GetFunction)
 {
-	EXPECT_TRUE(NativeLib.Library.GetFunction);
-	EXPECT_FALSE(NativeLib.Library.GetFunction(GetModuleHandleW(L"kernel32.dll"), "ThisExportDoesNotExist"));
-	EXPECT_FALSE(NativeLib.Library.GetFunction(NULL, NULL));
-	EXPECT_EQ(NativeLib.Library.GetFunction(NULL, "ExportedFunction"), &ExportedFunction);
-	EXPECT_EQ(NativeLib.Library.GetFunction(GetModuleHandleW(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA);
-	EXPECT_EQ(NativeLib.Library.GetFunction(NativeLib.Library.GetModule(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA);
+	EXPECT_TRUE(NativeLib.Library.GetFunction) << "GetFunction function does not exist!";
+	EXPECT_FALSE(NativeLib.Library.GetFunction(GetModuleHandleW(L"kernel32.dll"), "ThisExportDoesNotExist")) << ERROR_MSG("Non-existent export exists. This should never happen!");
+	EXPECT_FALSE(NativeLib.Library.GetFunction(NULL, NULL)) << ERROR_MSG("GetFunction function returned with NULL parameters!");
+	EXPECT_EQ(NativeLib.Library.GetFunction(NULL, "ExportedFunction"), &ExportedFunction) << ERROR_MSG("ExportedFunction does not match!");
+	EXPECT_EQ(NativeLib.Library.GetFunction(GetModuleHandleW(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA) << ERROR_MSG("SetDllDirectoryA does not match!");
+	EXPECT_EQ(NativeLib.Library.GetFunction(NativeLib.Library.GetModule(L"kernel32.dll"), "SetDllDirectoryA"), &SetDllDirectoryA) << ERROR_MSG("SetDllDirectoryA does not match!");
 }
 
 TEST(Library, GetFunctionByOrdinal)
 {
-	EXPECT_EQ(NativeLib.Library.GetFunctionByOrdinal(NULL, 0), &ExportedFunction);
+	EXPECT_EQ(NativeLib.Library.GetFunctionByOrdinal(NULL, 0), &ExportedFunction) << ERROR_MSG("Failed to find ExportedFunction by Ordinal");
 }
 
 TEST(Library, GetModuleFunction)
 {
-	EXPECT_TRUE(NativeLib.Library.GetModuleFunction);
-	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", "ExportedFunction"));
-	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", "ThisExportDoesNotExist"));
-	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", NULL));
-	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(NULL, NULL));
-	EXPECT_EQ(NativeLib.Library.GetModuleFunction(NULL, "ExportedFunction"), &ExportedFunction);
-	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"", "ExportedFunction"), &ExportedFunction);
-	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "SetDllDirectoryA"), &SetDllDirectoryA);
+	EXPECT_TRUE(NativeLib.Library.GetModuleFunction) << ERROR_MSG("GetModuleFunction function does not exist!");
+	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", "ExportedFunction")) << ERROR_MSG("Got ExportedFunction from non-existing DLL!");
+	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", "ThisExportDoesNotExist")) << ERROR_MSG("Got something from non-existing DLL!");
+	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(L"InvalidDLL.dll", NULL)) << ERROR_MSG("Call with NULL parameter from non-existing DLL succeeded!");
+	EXPECT_FALSE(NativeLib.Library.GetModuleFunction(NULL, NULL)) << ERROR_MSG("GetModuleFunction function returned with NULL parameters!");
+	EXPECT_EQ(NativeLib.Library.GetModuleFunction(NULL, "ExportedFunction"), &ExportedFunction) << ERROR_MSG("Failed to get ExportedFunction with NULL parameter!");
+	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"", "ExportedFunction"), &ExportedFunction) << ERROR_MSG("Failed to get ExportedFunction with empty parameter!");
+	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "SetDllDirectoryA"), &SetDllDirectoryA) << ERROR_MSG("Failed to get SetDllDirectoryA from kernel32.dll!");
 }
 TEST(Library, GetModuleFunctionForwarded)
 {
-	EXPECT_TRUE(NativeLib.Library.GetModuleFunction);
-	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "HeapAlloc"), &HeapAlloc);
-	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"advapi32.dll", "EtwEventWrite"), GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "EtwEventWrite"));
+	EXPECT_TRUE(NativeLib.Library.GetModuleFunction) << ERROR_MSG("GetModuleFunction function does not exist!");
+	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"kernel32.dll", "HeapAlloc"), &HeapAlloc) << ERROR_MSG("Forwarded function HeapAlloc does not match!");
+	EXPECT_EQ(NativeLib.Library.GetModuleFunction(L"advapi32.dll", "EtwEventWrite"), GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "EtwEventWrite")) << ERROR_MSG("Forwarded EtwEventWrite HeapAlloc does not match!");
 }
 TEST(Library, GetModule)
 {
-	EXPECT_TRUE(NativeLib.Library.GetModule);
-	EXPECT_FALSE(NativeLib.Library.GetModule(L"ThisModuleDoesNotExist.dll"));
-	EXPECT_EQ(NativeLib.Library.GetModule(nullptr), GetModuleHandleA(nullptr));
-	EXPECT_EQ(NativeLib.Library.GetModule(L"kernel32.dll"), GetModuleHandleA("kernel32.dll"));
+	EXPECT_TRUE(NativeLib.Library.GetModule) << ERROR_MSG("GetModule function does not exist!");
+	EXPECT_FALSE(NativeLib.Library.GetModule(L"ThisModuleDoesNotExist.dll")) << ERROR_MSG("Got module that should not exist!");
+	EXPECT_EQ(NativeLib.Library.GetModule(nullptr), GetModuleHandleA(nullptr)) << ERROR_MSG("Exe base mismatch!");
+	EXPECT_EQ(NativeLib.Library.GetModule(L"kernel32.dll"), GetModuleHandleA("kernel32.dll")) << ERROR_MSG("kernel32 base mismatch!");
 }
 
 TEST(Library, LoadLibrary)
 {
-	GTEST_SKIP("Not yet implemented");
+	SKIP_TEST("Not yet implemented");
 }

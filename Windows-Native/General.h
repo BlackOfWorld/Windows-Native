@@ -34,8 +34,7 @@ struct Library
 };
 struct File
 {
-	PHANDLE(*Open)();
-	PHANDLE(*Create)();
+	PHANDLE(*Create)(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
 	INT64(*Size)(HANDLE hFile);
 	BOOL(*Close)(HANDLE hFile);
 };
