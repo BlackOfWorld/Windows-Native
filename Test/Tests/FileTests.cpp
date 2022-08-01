@@ -2,7 +2,7 @@
 
 TEST(File, Create)
 {
-	NativeLib.File.Create((wchar_t*)L"TestFile.txt", GENERIC_WRITE, FILE_SHARE_WRITE, CREATE_NEW, FILE_ATTRIBUTE_NORMAL);
+	EXPECT_NE(NativeLib.File.Create((wchar_t*)L"TestFile.txt", GENERIC_WRITE, FILE_SHARE_WRITE, CREATE_NEW, FILE_ATTRIBUTE_NORMAL), INVALID_HANDLE_VALUE);
 }
 
 TEST(File, Size)

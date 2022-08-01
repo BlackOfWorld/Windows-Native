@@ -178,8 +178,8 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 	FlagsAndAttributes |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
 
 	//TODO: Validate and translate from DOS Path to NT Path internally and don't use ntdll
-	PRTL_RELATIVE_NAME_U relName;
-	if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName,	&NtPathU,NULL, &relName)))
+	RTL_RELATIVE_NAME_U relName;
+	if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName,	&NtPathU, NULL, &relName)))
 	{
 		SetLastError(ERROR_FILE_NOT_FOUND);
 		return INVALID_HANDLE_VALUE;
