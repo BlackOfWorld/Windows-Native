@@ -8,17 +8,19 @@
 #include "System/Process/Process.h"
 #include "Memory/Memory.h"
 #include "System/File/File.h"
+#include "System/Process/CurrentProcess.h"
 
 struct nativeLib NativeLib;
 NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
 EXTERNC void NativeInit()
 {
-	if (NativeLib.isInitialized) return;
-	NativeLib.isInitialized = true;
-	NativeLib.Process = Process;
-	NativeLib.Library = Library;
-	NativeLib.Memory = Memory;
-	NativeLib.File = File;
-	cpu_detect_features();
-	NtClose = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtClose");
+    if (NativeLib.isInitialized) return;
+    NativeLib.isInitialized = true;
+    NativeLib.Process = Process;
+    NativeLib.Process.CurrentProcess = CurrentProcess;
+    NativeLib.Library = Library;
+    NativeLib.Memory = Memory;
+    NativeLib.File = File;
+    cpu_detect_features();
+    NtClose = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtClose");
 }

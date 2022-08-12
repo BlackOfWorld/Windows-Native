@@ -1,10 +1,11 @@
 #pragma once
 #include <intrin.h>
 #include <immintrin.h>
-
+#define MAXIMUM_SUPPORTED_EXTENSION     512
+#define SIZE_OF_80387_REGISTERS      80
 struct
 {
-    char cpu_FSRM;       //Fast Short REP MOV
+    char cpu_FSRM;       //Fast Short REP MOV https://www-ssl.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-optimization-manual.html
     char cpu_SGX;        //Software Guard Extensions
     char cpu_AVX;        //Advanced Vector Extensions
     char cpu_AVX2;       //Advanced Vector Extensions 2
@@ -14,6 +15,9 @@ struct
     char cpu_SSE;        //SSE instructions
     char cpu_SSE2;       //SSE2 instructions
     char cpu_SHA;        //SHA instructions
+    char cpu_FZRM;       //Fast Zero Length REP MOVSB
+    char cpu_FSRS;       //Fast Short REP STOSB
+    char cpu_FSRC;       //Fast Short REP CMPSB and SCASB
 } CPUFeatures;
 
 #if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
@@ -322,7 +326,9 @@ typedef DWORD NTSTATUS;
 #define MAXIMUM_WAIT_OBJECTS 64
 #define MAXIMUM_SUSPEND_COUNT MAXCHAR
 
+#ifndef NULL
 #define NULL 0
+#endif
 #define bool  _Bool
 #define false 0
 #define true  1
@@ -443,8 +449,8 @@ typedef struct _LARGE_INTEGER
 
 
 typedef struct _LIST_ENTRY {
-	struct _LIST_ENTRY* Flink;
-	struct _LIST_ENTRY* Blink;
+    struct _LIST_ENTRY* Flink;
+    struct _LIST_ENTRY* Blink;
 } LIST_ENTRY, * PLIST_ENTRY;
 typedef struct _CLIENT_ID
 {
@@ -453,63 +459,63 @@ typedef struct _CLIENT_ID
 } CLIENT_ID, *PCLIENT_ID;
 
 typedef struct _UNICODE_STRING {
-	unsigned short	Length;
-	unsigned short	MaximumLength;
-	wchar_t* Buffer;
+    unsigned short    Length;
+    unsigned short    MaximumLength;
+    wchar_t* Buffer;
 } UNICODE_STRING, * PUNICODE_STRING;
 
 typedef struct _ACTIVATION_CONTEXT
 {
-	unsigned long       magic;
-	int                 ref_count;
-	//struct file_info    config;
-	//struct file_info    appdir;
-	struct assembly* assemblies;
-	unsigned int        num_assemblies;
-	unsigned int        allocated_assemblies;
-	/* section data */
-	unsigned long       sections;
-	struct strsection_header* wndclass_section;
-	struct strsection_header* dllredirect_section;
-	struct strsection_header* progid_section;
-	struct guidsection_header* tlib_section;
-	struct guidsection_header* comserver_section;
-	struct guidsection_header* ifaceps_section;
-	struct guidsection_header* clrsurrogate_section;
+    unsigned long       magic;
+    int                 ref_count;
+    //struct file_info    config;
+    //struct file_info    appdir;
+    struct assembly* assemblies;
+    unsigned int        num_assemblies;
+    unsigned int        allocated_assemblies;
+    /* section data */
+    unsigned long       sections;
+    struct strsection_header* wndclass_section;
+    struct strsection_header* dllredirect_section;
+    struct strsection_header* progid_section;
+    struct guidsection_header* tlib_section;
+    struct guidsection_header* comserver_section;
+    struct guidsection_header* ifaceps_section;
+    struct guidsection_header* clrsurrogate_section;
 } ACTIVATION_CONTEXT;
 
 typedef struct _LDR_DATA_TABLE_ENTRY
 {
-	LIST_ENTRY			InLoadOrderLinks;				/* 0x00 */
-	LIST_ENTRY			InMemoryOrderLinks;				/* 0x10 */
-	LIST_ENTRY			InInitializationOrderLinks;		/* 0x20 */
-	void* DllBase;						/* 0x30 */
-	void* EntryPoint;						/* 0x38 */
-	unsigned long		SizeOfImage;					/* 0x40 */
-	UNICODE_STRING		FullDllName;					/* 0x48 */
-	UNICODE_STRING		BaseDllName;					/* 0x58 */
-	unsigned long Flags;
-	unsigned short LoadCount;
-	unsigned short TlsIndex;
-	union
-	{
-		LIST_ENTRY HashLinks;
-		struct
-		{
-			void* SectionPointer;
-			unsigned long CheckSum;
-		};
-	};
-	union
-	{
-		unsigned long TimeDateStamp;
-		void* LoadedImports;
-	};
-	struct _ACTIVATION_CONTEXT* EntryPointActivationContext;
-	void* PatchInformation;
-	LIST_ENTRY ForwarderLinks;
-	LIST_ENTRY ServiceTagLinks;
-	LIST_ENTRY StaticLinks;
+    LIST_ENTRY            InLoadOrderLinks;                /* 0x00 */
+    LIST_ENTRY            InMemoryOrderLinks;                /* 0x10 */
+    LIST_ENTRY            InInitializationOrderLinks;        /* 0x20 */
+    void* DllBase;                        /* 0x30 */
+    void* EntryPoint;                        /* 0x38 */
+    unsigned long        SizeOfImage;                    /* 0x40 */
+    UNICODE_STRING        FullDllName;                    /* 0x48 */
+    UNICODE_STRING        BaseDllName;                    /* 0x58 */
+    unsigned long Flags;
+    unsigned short LoadCount;
+    unsigned short TlsIndex;
+    union
+    {
+        LIST_ENTRY HashLinks;
+        struct
+        {
+            void* SectionPointer;
+            unsigned long CheckSum;
+        };
+    };
+    union
+    {
+        unsigned long TimeDateStamp;
+        void* LoadedImports;
+    };
+    struct _ACTIVATION_CONTEXT* EntryPointActivationContext;
+    void* PatchInformation;
+    LIST_ENTRY ForwarderLinks;
+    LIST_ENTRY ServiceTagLinks;
+    LIST_ENTRY StaticLinks;
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
 typedef struct _PEB_LDR_DATA
@@ -524,7 +530,6 @@ typedef struct _PEB_LDR_DATA
     UCHAR ShutdownInProgress;                                               //0x48
     VOID* ShutdownThreadId;                                                 //0x50
 } PEB_LDR_DATA, * PPEB_LDR_DATA;
-typedef struct PRTL_CRITICAL_SECTION_DEBUG;
 typedef struct _RTL_CRITICAL_SECTION_DEBUG
 {
     WORD Type;
@@ -604,6 +609,314 @@ typedef struct _GUID {
     unsigned short Data3;
     unsigned char  Data4[8];
 } GUID;
+typedef struct _HEAP_EXTENDED_ENTRY
+{
+    VOID* Reserved;                                                         //0x0
+    union
+    {
+        struct
+        {
+            USHORT FunctionIndex;                                           //0x8
+            USHORT ContextValue;                                            //0xa
+        };
+        ULONG InterceptorValue;                                             //0x8
+    };
+    USHORT UnusedBytesLength;                                               //0xc
+    UCHAR EntryOffset;                                                      //0xe
+    UCHAR ExtendedBlockSignature;                                           //0xf
+} HEAP_EXTENDED_ENTRY, *PHEAP_EXTENDED_ENTRY;
+typedef struct _HEAP_UNPACKED_ENTRY
+{
+    VOID* PreviousBlockPrivateData;                                         //0x0
+    union
+    {
+        struct
+        {
+            USHORT Size;                                                    //0x8
+            UCHAR Flags;                                                    //0xa
+            UCHAR SmallTagIndex;                                            //0xb
+        };
+        struct
+        {
+            ULONG SubSegmentCode;                                           //0x8
+            USHORT PreviousSize;                                            //0xc
+            union
+            {
+                UCHAR SegmentOffset;                                        //0xe
+                UCHAR LFHFlags;                                             //0xe
+            };
+            UCHAR UnusedBytes;                                              //0xf
+        };
+        ULONGLONG CompactHeader;                                            //0x8
+    };
+} HEAP_UNPACKED_ENTRY, *PHEAP_UNPACKED_ENTRY;
+typedef struct _HEAP_ENTRY
+{
+    union
+    {
+        HEAP_UNPACKED_ENTRY UnpackedEntry;                          //0x0
+        struct
+        {
+            VOID* PreviousBlockPrivateData;                                 //0x0
+            union
+            {
+                struct
+                {
+                    USHORT Size;                                            //0x8
+                    UCHAR Flags;                                            //0xa
+                    UCHAR SmallTagIndex;                                    //0xb
+                };
+                struct
+                {
+                    ULONG SubSegmentCode;                                   //0x8
+                    USHORT PreviousSize;                                    //0xc
+                    union
+                    {
+                        UCHAR SegmentOffset;                                //0xe
+                        UCHAR LFHFlags;                                     //0xe
+                    };
+                    UCHAR UnusedBytes;                                      //0xf
+                };
+                ULONGLONG CompactHeader;                                    //0x8
+            };
+        };
+        HEAP_EXTENDED_ENTRY ExtendedEntry;                          //0x0
+        struct
+        {
+            VOID* Reserved;                                                 //0x0
+            union
+            {
+                struct
+                {
+                    USHORT FunctionIndex;                                   //0x8
+                    USHORT ContextValue;                                    //0xa
+                };
+                ULONG InterceptorValue;                                     //0x8
+            };
+            USHORT UnusedBytesLength;                                       //0xc
+            UCHAR EntryOffset;                                              //0xe
+            UCHAR ExtendedBlockSignature;                                   //0xf
+        };
+        struct
+        {
+            VOID* ReservedForAlignment;                                     //0x0
+            union
+            {
+                struct
+                {
+                    ULONG Code1;                                            //0x8
+                    union
+                    {
+                        struct
+                        {
+                            USHORT Code2;                                   //0xc
+                            UCHAR Code3;                                    //0xe
+                            UCHAR Code4;                                    //0xf
+                        };
+                        ULONG Code234;                                      //0xc
+                    };
+                };
+                ULONGLONG AgregateCode;                                     //0x8
+            };
+        };
+    };
+} HEAP_ENTRY, *PHEAP_ENTRY;
+typedef struct _HEAP_SEGMENT
+{
+    HEAP_ENTRY Entry;                                               //0x0
+    ULONG SegmentSignature;                                                 //0x10
+    ULONG SegmentFlags;                                                     //0x14
+    LIST_ENTRY SegmentListEntry;                                    //0x18
+    struct _HEAP* Heap;                                                     //0x28
+    VOID* BaseAddress;                                                      //0x30
+    ULONG NumberOfPages;                                                    //0x38
+    PHEAP_ENTRY FirstEntry;                                         //0x40
+    PHEAP_ENTRY LastValidEntry;                                     //0x48
+    ULONG NumberOfUnCommittedPages;                                         //0x50
+    ULONG NumberOfUnCommittedRanges;                                        //0x54
+    USHORT SegmentAllocatorBackTraceIndex;                                  //0x58
+    USHORT Reserved;                                                        //0x5a
+    LIST_ENTRY UCRSegmentList;                                      //0x60
+} HEAP_SEGMENT, *PHEAP_SEGMENT;
+typedef union _RTL_RUN_ONCE
+{
+    VOID* Ptr;                                                              //0x0
+    ULONGLONG Value;                                                        //0x0
+    ULONGLONG State : 2;                                                    //0x0
+} RTL_RUN_ONCE, *PRTL_RUN_ONCE;
+typedef struct _RTL_HEAP_MEMORY_LIMIT_DATA
+{
+    ULONGLONG CommitLimitBytes;                                             //0x0
+    ULONGLONG CommitLimitFailureCode;                                       //0x8
+    ULONGLONG MaxAllocationSizeBytes;                                       //0x10
+    ULONGLONG AllocationLimitFailureCode;                                   //0x18
+} RTL_HEAP_MEMORY_LIMIT_DATA, *PRTL_HEAP_MEMORY_LIMIT_DATA;
+typedef struct _HEAP_COUNTERS
+{
+    ULONGLONG TotalMemoryReserved;                                          //0x0
+    ULONGLONG TotalMemoryCommitted;                                         //0x8
+    ULONGLONG TotalMemoryLargeUCR;                                          //0x10
+    ULONGLONG TotalSizeInVirtualBlocks;                                     //0x18
+    ULONG TotalSegments;                                                    //0x20
+    ULONG TotalUCRs;                                                        //0x24
+    ULONG CommittOps;                                                       //0x28
+    ULONG DeCommitOps;                                                      //0x2c
+    ULONG LockAcquires;                                                     //0x30
+    ULONG LockCollisions;                                                   //0x34
+    ULONG CommitRate;                                                       //0x38
+    ULONG DecommittRate;                                                    //0x3c
+    ULONG CommitFailures;                                                   //0x40
+    ULONG InBlockCommitFailures;                                            //0x44
+    ULONG PollIntervalCounter;                                              //0x48
+    ULONG DecommitsSinceLastCheck;                                          //0x4c
+    ULONG HeapPollInterval;                                                 //0x50
+    ULONG AllocAndFreeOps;                                                  //0x54
+    ULONG AllocationIndicesActive;                                          //0x58
+    ULONG InBlockDeccommits;                                                //0x5c
+    ULONGLONG InBlockDeccomitSize;                                          //0x60
+    ULONGLONG HighWatermarkSize;                                            //0x68
+    ULONGLONG LastPolledSize;                                               //0x70
+} HEAP_COUNTERS, *PHEAP_COUNTERS;
+typedef struct _HEAP_TUNING_PARAMETERS
+{
+    ULONG CommittThresholdShift;                                            //0x0
+    ULONGLONG MaxPreCommittThreshold;                                       //0x8
+} HEAP_TUNING_PARAMETERS, *PHEAP_TUNING_PARAMETERS;
+typedef struct _HEAP_TAG_ENTRY
+{
+    ULONG Allocs;                                                           //0x0
+    ULONG Frees;                                                            //0x4
+    ULONGLONG Size;                                                         //0x8
+    USHORT TagIndex;                                                        //0x10
+    USHORT CreatorBackTraceIndex;                                           //0x12
+    WCHAR TagName[24];                                                      //0x14
+} HEAP_TAG_ENTRY, *PHEAP_TAG_ENTRY;
+typedef struct _OWNER_ENTRY
+{
+    ULONGLONG OwnerThread;                                                  //0x0
+    union
+    {
+        struct
+        {
+            ULONG IoPriorityBoosted : 1;                                      //0x8
+            ULONG OwnerReferenced : 1;                                        //0x8
+            ULONG IoQoSPriorityBoosted : 1;                                   //0x8
+            ULONG OwnerCount : 29;                                            //0x8
+        };
+        ULONG TableSize;                                                    //0x8
+    };
+} OWNER_ENTRY, *POWNER_ENTRY;
+typedef struct _ERESOURCE
+{
+    LIST_ENTRY SystemResourcesList;                                 //0x0
+    OWNER_ENTRY* OwnerTable;                                        //0x10
+    SHORT ActiveCount;                                                      //0x18
+    union
+    {
+        USHORT Flag;                                                        //0x1a
+        struct
+        {
+            UCHAR ReservedLowFlags;                                         //0x1a
+            UCHAR WaiterPriority;                                           //0x1b
+        };
+    };
+    VOID* SharedWaiters;                                                    //0x20
+    VOID* ExclusiveWaiters;                                                 //0x28
+    OWNER_ENTRY OwnerEntry;                                         //0x30
+    ULONG ActiveEntries;                                                    //0x40
+    ULONG ContentionCount;                                                  //0x44
+    ULONG NumberOfSharedWaiters;                                            //0x48
+    ULONG NumberOfExclusiveWaiters;                                         //0x4c
+    VOID* Reserved2;                                                        //0x50
+    union
+    {
+        VOID* Address;                                                      //0x58
+        ULONGLONG CreatorBackTraceIndex;                                    //0x58
+    };
+    ULONGLONG SpinLock;                                                     //0x60
+} ERESOURCE, *PERESOURCE;
+typedef struct _HEAP_LOCK
+{
+    union
+    {
+        RTL_CRITICAL_SECTION CriticalSection;                       //0x0
+        ERESOURCE Resource;                                         //0x0
+    } Lock;                                                                 //0x0
+} HEAP_LOCK, *PHEAP_LOCK;
+typedef struct _HEAP_PSEUDO_TAG_ENTRY
+{
+    ULONG Allocs;                                                           //0x0
+    ULONG Frees;                                                            //0x4
+    ULONGLONG Size;                                                         //0x8
+} HEAP_PSEUDO_TAG_ENTRY, *PHEAP_PSEUDO_TAG_ENTRY;
+typedef struct _HEAP
+{
+    union
+    {
+        HEAP_SEGMENT Segment;                                       //0x0
+        struct
+        {
+            HEAP_ENTRY Entry;                                       //0x0
+            ULONG SegmentSignature;                                         //0x10
+            ULONG SegmentFlags;                                             //0x14
+            LIST_ENTRY SegmentListEntry;                            //0x18
+            struct _HEAP* Heap;                                             //0x28
+            VOID* BaseAddress;                                              //0x30
+            ULONG NumberOfPages;                                            //0x38
+            HEAP_ENTRY* FirstEntry;                                 //0x40
+            HEAP_ENTRY* LastValidEntry;                             //0x48
+            ULONG NumberOfUnCommittedPages;                                 //0x50
+            ULONG NumberOfUnCommittedRanges;                                //0x54
+            USHORT SegmentAllocatorBackTraceIndex;                          //0x58
+            USHORT Reserved;                                                //0x5a
+            LIST_ENTRY UCRSegmentList;                              //0x60
+        };
+    };
+    ULONG Flags;                                                            //0x70
+    ULONG ForceFlags;                                                       //0x74
+    ULONG CompatibilityFlags;                                               //0x78
+    ULONG EncodeFlagMask;                                                   //0x7c
+    HEAP_ENTRY Encoding;                                            //0x80
+    ULONG Interceptor;                                                      //0x90
+    ULONG VirtualMemoryThreshold;                                           //0x94
+    ULONG Signature;                                                        //0x98
+    ULONGLONG SegmentReserve;                                               //0xa0
+    ULONGLONG SegmentCommit;                                                //0xa8
+    ULONGLONG DeCommitFreeBlockThreshold;                                   //0xb0
+    ULONGLONG DeCommitTotalFreeThreshold;                                   //0xb8
+    ULONGLONG TotalFreeSize;                                                //0xc0
+    ULONGLONG MaximumAllocationSize;                                        //0xc8
+    USHORT ProcessHeapsListIndex;                                           //0xd0
+    USHORT HeaderValidateLength;                                            //0xd2
+    VOID* HeaderValidateCopy;                                               //0xd8
+    USHORT NextAvailableTagIndex;                                           //0xe0
+    USHORT MaximumTagIndex;                                                 //0xe2
+    HEAP_TAG_ENTRY* TagEntries;                                     //0xe8
+    LIST_ENTRY UCRList;                                             //0xf0
+    ULONGLONG AlignRound;                                                   //0x100
+    ULONGLONG AlignMask;                                                    //0x108
+    LIST_ENTRY VirtualAllocdBlocks;                                 //0x110
+    LIST_ENTRY SegmentList;                                         //0x120
+    USHORT AllocatorBackTraceIndex;                                         //0x130
+    ULONG NonDedicatedListLength;                                           //0x134
+    VOID* BlocksIndex;                                                      //0x138
+    VOID* UCRIndex;                                                         //0x140
+    struct _HEAP_PSEUDO_TAG_ENTRY* PseudoTagEntries;                        //0x148
+    LIST_ENTRY FreeLists;                                           //0x150
+    HEAP_LOCK* LockVariable;                                        //0x160
+    LONG(*CommitRoutine)(VOID* arg1, VOID** arg2, ULONGLONG* arg3);        //0x168
+    RTL_RUN_ONCE StackTraceInitVar;                                  //0x170
+    RTL_HEAP_MEMORY_LIMIT_DATA CommitLimitData;                     //0x178
+    VOID* FrontEndHeap;                                                     //0x198
+    USHORT FrontHeapLockCount;                                              //0x1a0
+    UCHAR FrontEndHeapType;                                                 //0x1a2
+    UCHAR RequestedFrontEndHeapType;                                        //0x1a3
+    WCHAR* FrontEndHeapUsageData;                                           //0x1a8
+    USHORT FrontEndHeapMaximumIndex;                                        //0x1b0
+    volatile UCHAR FrontEndHeapStatusBitmap[129];                           //0x1b2
+    HEAP_COUNTERS Counters;                                         //0x238
+    HEAP_TUNING_PARAMETERS TuningParameters;                        //0x2b0
+} HEAP, *PHEAP;
 typedef struct _PEB
 {
     UCHAR InheritedAddressSpace;
@@ -629,7 +942,7 @@ typedef struct _PEB
     PPEB_LDR_DATA Ldr;
     PRTL_USER_PROCESS_PARAMETERS ProcessParameters;
     PVOID SubSystemData;
-    PVOID ProcessHeap;
+    PHEAP ProcessHeap;
     PRTL_CRITICAL_SECTION FastPebLock;
     PVOID AtlThunkSListPtr;
     PVOID IFEOKey;
@@ -726,6 +1039,68 @@ struct _NT_TIB
     VOID* ArbitraryUserPointer;                                             //0x28
     struct _NT_TIB* Self;                                                   //0x30
 };
+typedef struct _FLOATING_SAVE_AREA {
+    DWORD   ControlWord;
+    DWORD   StatusWord;
+    DWORD   TagWord;
+    DWORD   ErrorOffset;
+    DWORD   ErrorSelector;
+    DWORD   DataOffset;
+    DWORD   DataSelector;
+    BYTE    RegisterArea[SIZE_OF_80387_REGISTERS];
+    DWORD   Spare0;
+} FLOATING_SAVE_AREA;
+#define CONTEXT_i386    0x00010000L    // this assumes that i386 and
+#define CONTEXT_i486    0x00010000L    // i486 have identical context records
+#define CONTEXT_CONTROL         (CONTEXT_i386 | 0x00000001L) // SS:SP, CS:IP, FLAGS, BP
+#define CONTEXT_INTEGER         (CONTEXT_i386 | 0x00000002L) // AX, BX, CX, DX, SI, DI
+#define CONTEXT_SEGMENTS        (CONTEXT_i386 | 0x00000004L) // DS, ES, FS, GS
+#define CONTEXT_FLOATING_POINT  (CONTEXT_i386 | 0x00000008L) // 387 state
+#define CONTEXT_DEBUG_REGISTERS (CONTEXT_i386 | 0x00000010L) // DB 0-3,6,7
+#define CONTEXT_EXTENDED_REGISTERS  (CONTEXT_i386 | 0x00000020L) // cpu specific extensions
+
+#define CONTEXT_FULL (CONTEXT_CONTROL | CONTEXT_INTEGER |\
+                      CONTEXT_SEGMENTS)
+
+#define CONTEXT_ALL             (CONTEXT_CONTROL | CONTEXT_INTEGER | CONTEXT_SEGMENTS | \
+                                 CONTEXT_FLOATING_POINT | CONTEXT_DEBUG_REGISTERS | \
+                                 CONTEXT_EXTENDED_REGISTERS)
+
+#define CONTEXT_XSTATE          (CONTEXT_i386 | 0x00000040L)
+
+#define CONTEXT_EXCEPTION_ACTIVE    0x08000000L
+#define CONTEXT_SERVICE_ACTIVE      0x10000000L
+#define CONTEXT_EXCEPTION_REQUEST   0x40000000L
+#define CONTEXT_EXCEPTION_REPORTING 0x80000000L
+
+typedef struct _CONTEXT {
+    DWORD ContextFlags;
+    DWORD   Dr0;
+    DWORD   Dr1;
+    DWORD   Dr2;
+    DWORD   Dr3;
+    DWORD   Dr6;
+    DWORD   Dr7;
+    FLOATING_SAVE_AREA FloatSave;
+    DWORD   SegGs;
+    DWORD   SegFs;
+    DWORD   SegEs;
+    DWORD   SegDs;
+    DWORD   Edi;
+    DWORD   Esi;
+    DWORD   Ebx;
+    DWORD   Edx;
+    DWORD   Ecx;
+    DWORD   Eax;
+    DWORD   Ebp;
+    DWORD   Eip;
+    DWORD   SegCs;              // MUST BE SANITIZED
+    DWORD   EFlags;             // MUST BE SANITIZED
+    DWORD   Esp;
+    DWORD   SegSs;
+
+    BYTE    ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
+} CONTEXT, *PCONTEXT;
 struct _GDI_TEB_BATCH
 {
     ULONG Offset : 31;                                                        //0x0
@@ -1738,6 +2113,178 @@ typedef struct _SYSTEM_PROCESS_INFORMATION {
     IO_COUNTERS IoCounters;
     SYSTEM_THREAD Threads[1];
 } SYSTEM_PROCESS_INFORMATION, * PSYSTEM_PROCESS_INFORMATION;
+typedef struct _KSYSTEM_TIME
+{
+    ULONG LowPart;                                                          //0x0
+    LONG High1Time;                                                         //0x4
+    LONG High2Time;                                                         //0x8
+} KSYSTEM_TIME, *PKSYSTEM_TIME;
+typedef enum _ALTERNATIVE_ARCHITECTURE_TYPE
+{
+    StandardDesign = 0,
+    NEC98x86 = 1,
+    EndAlternatives = 2
+} ALTERNATIVE_ARCHITECTURE_TYPE;
+typedef enum _NT_PRODUCT_TYPE
+{
+    NtProductWinNt = 1,
+    NtProductLanManNt = 2,
+    NtProductServer = 3
+} NT_PRODUCT_TYPE;
+typedef struct _XSTATE_FEATURE
+{
+    ULONG Offset;                                                           //0x0
+    ULONG Size;                                                             //0x4
+} XSTATE_FEATURE;
+typedef struct _XSTATE_CONFIGURATION
+{
+    ULONGLONG EnabledFeatures;                                              //0x0
+    ULONGLONG EnabledVolatileFeatures;                                      //0x8
+    ULONG Size;                                                             //0x10
+    union
+    {
+        ULONG ControlFlags;                                                 //0x14
+        struct
+        {
+            ULONG OptimizedSave : 1;                                          //0x14
+            ULONG CompactionEnabled : 1;                                      //0x14
+            ULONG ExtendedFeatureDisable : 1;                                 //0x14
+        };
+    };
+    XSTATE_FEATURE Features[64];                                            //0x18
+    ULONGLONG EnabledSupervisorFeatures;                                    //0x218
+    ULONGLONG AlignedFeatures;                                              //0x220
+    ULONG AllFeatureSize;                                                   //0x228
+    ULONG AllFeatures[64];                                                  //0x22c
+    ULONGLONG EnabledUserVisibleSupervisorFeatures;                         //0x330
+    ULONGLONG ExtendedFeatureDisableFeatures;                               //0x338
+    ULONG AllNonLargeFeatureSize;                                           //0x340
+    ULONG Spare;                                                            //0x344
+} XSTATE_CONFIGURATION, *PXSTATE_CONFIGURATION;
+typedef struct _KUSER_SHARED_DATA
+{
+    ULONG TickCountLowDeprecated;                                           //0x0
+    ULONG TickCountMultiplier;                                              //0x4
+    volatile KSYSTEM_TIME InterruptTime;                                    //0x8
+    volatile KSYSTEM_TIME SystemTime;                                       //0x14
+    volatile KSYSTEM_TIME TimeZoneBias;                                     //0x20
+    USHORT ImageNumberLow;                                                  //0x2c
+    USHORT ImageNumberHigh;                                                 //0x2e
+    WCHAR NtSystemRoot[260];                                                //0x30
+    ULONG MaxStackTraceDepth;                                               //0x238
+    ULONG CryptoExponent;                                                   //0x23c
+    ULONG TimeZoneId;                                                       //0x240
+    ULONG LargePageMinimum;                                                 //0x244
+    ULONG AitSamplingValue;                                                 //0x248
+    ULONG AppCompatFlag;                                                    //0x24c
+    ULONGLONG RNGSeedVersion;                                               //0x250
+    ULONG GlobalValidationRunlevel;                                         //0x258
+    volatile LONG TimeZoneBiasStamp;                                        //0x25c
+    ULONG NtBuildNumber;                                                    //0x260
+    NT_PRODUCT_TYPE NtProductType;                                          //0x264
+    UCHAR ProductTypeIsValid;                                               //0x268
+    UCHAR Reserved0[1];                                                     //0x269
+    USHORT NativeProcessorArchitecture;                                     //0x26a
+    ULONG NtMajorVersion;                                                   //0x26c
+    ULONG NtMinorVersion;                                                   //0x270
+    UCHAR ProcessorFeatures[64];                                            //0x274
+    ULONG Reserved1;                                                        //0x2b4
+    ULONG Reserved3;                                                        //0x2b8
+    volatile ULONG TimeSlip;                                                //0x2bc
+    ALTERNATIVE_ARCHITECTURE_TYPE AlternativeArchitecture;                  //0x2c0
+    ULONG BootId;                                                           //0x2c4
+    LARGE_INTEGER SystemExpirationDate;                                     //0x2c8
+    ULONG SuiteMask;                                                        //0x2d0
+    UCHAR KdDebuggerEnabled;                                                //0x2d4
+    union
+    {
+        UCHAR MitigationPolicies;                                           //0x2d5
+        struct
+        {
+            UCHAR NXSupportPolicy : 2;                                        //0x2d5
+            UCHAR SEHValidationPolicy : 2;                                    //0x2d5
+            UCHAR CurDirDevicesSkippedForDlls : 2;                            //0x2d5
+            UCHAR Reserved : 2;                                               //0x2d5
+        };
+    };
+    USHORT CyclesPerYield;                                                  //0x2d6
+    volatile ULONG ActiveConsoleId;                                         //0x2d8
+    volatile ULONG DismountCount;                                           //0x2dc
+    ULONG ComPlusPackage;                                                   //0x2e0
+    ULONG LastSystemRITEventTickCount;                                      //0x2e4
+    ULONG NumberOfPhysicalPages;                                            //0x2e8
+    UCHAR SafeBootMode;                                                     //0x2ec
+    UCHAR VirtualizationFlags;                                              //0x2ed
+    UCHAR Reserved12[2];                                                    //0x2ee
+    union
+    {
+        ULONG SharedDataFlags;                                              //0x2f0
+        struct
+        {
+            ULONG DbgErrorPortPresent : 1;                                    //0x2f0
+            ULONG DbgElevationEnabled : 1;                                    //0x2f0
+            ULONG DbgVirtEnabled : 1;                                         //0x2f0
+            ULONG DbgInstallerDetectEnabled : 1;                              //0x2f0
+            ULONG DbgLkgEnabled : 1;                                          //0x2f0
+            ULONG DbgDynProcessorEnabled : 1;                                 //0x2f0
+            ULONG DbgConsoleBrokerEnabled : 1;                                //0x2f0
+            ULONG DbgSecureBootEnabled : 1;                                   //0x2f0
+            ULONG DbgMultiSessionSku : 1;                                     //0x2f0
+            ULONG DbgMultiUsersInSessionSku : 1;                              //0x2f0
+            ULONG DbgStateSeparationEnabled : 1;                              //0x2f0
+            ULONG SpareBits : 21;                                             //0x2f0
+        };
+    };
+    ULONG DataFlagsPad[1];                                                  //0x2f4
+    ULONGLONG TestRetInstruction;                                           //0x2f8
+    LONGLONG QpcFrequency;                                                  //0x300
+    ULONG SystemCall;                                                       //0x308
+    ULONG Reserved2;                                                        //0x30c
+    ULONGLONG SystemCallPad[2];                                             //0x310
+    union
+    {
+        volatile KSYSTEM_TIME TickCount;                                    //0x320
+        volatile ULONGLONG TickCountQuad;                                   //0x320
+        ULONG ReservedTickCountOverlay[3];                                  //0x320
+    };
+    ULONG TickCountPad[1];                                                  //0x32c
+    ULONG Cookie;                                                           //0x330
+    ULONG CookiePad[1];                                                     //0x334
+    LONGLONG ConsoleSessionForegroundProcessId;                             //0x338
+    ULONGLONG TimeUpdateLock;                                               //0x340
+    ULONGLONG BaselineSystemTimeQpc;                                        //0x348
+    ULONGLONG BaselineInterruptTimeQpc;                                     //0x350
+    ULONGLONG QpcSystemTimeIncrement;                                       //0x358
+    ULONGLONG QpcInterruptTimeIncrement;                                    //0x360
+    UCHAR QpcSystemTimeIncrementShift;                                      //0x368
+    UCHAR QpcInterruptTimeIncrementShift;                                   //0x369
+    USHORT UnparkedProcessorCount;                                          //0x36a
+    ULONG EnclaveFeatureMask[4];                                            //0x36c
+    ULONG TelemetryCoverageRound;                                           //0x37c
+    USHORT UserModeGlobalLogger[16];                                        //0x380
+    ULONG ImageFileExecutionOptions;                                        //0x3a0
+    ULONG LangGenerationCount;                                              //0x3a4
+    ULONGLONG Reserved4;                                                    //0x3a8
+    volatile ULONGLONG InterruptTimeBias;                                   //0x3b0
+    volatile ULONGLONG QpcBias;                                             //0x3b8
+    ULONG ActiveProcessorCount;                                             //0x3c0
+    volatile UCHAR ActiveGroupCount;                                        //0x3c4
+    UCHAR Reserved9;                                                        //0x3c5
+    union
+    {
+        USHORT QpcData;                                                     //0x3c6
+        struct
+        {
+            volatile UCHAR QpcBypassEnabled;                                //0x3c6
+            UCHAR QpcShift;                                                 //0x3c7
+        };
+    };
+    LARGE_INTEGER TimeZoneBiasEffectiveStart;                               //0x3c8
+    LARGE_INTEGER TimeZoneBiasEffectiveEnd;                                 //0x3d0
+    XSTATE_CONFIGURATION XState;                                            //0x3d8
+    KSYSTEM_TIME FeatureConfigurationChangeStamp;                           //0x720
+    ULONG Spare;                                                            //0x72c
+} KUSER_SHARED_DATA, *PKUSER_SHARED_DATA;
 #define TU(c) (((c > 96) && (c < 123)) ? (c - 32) : (c))
 inline int stricmpA(const char* a, const char* b)
 {
@@ -1791,14 +2338,13 @@ inline const wchar_t* strchrW(const wchar_t* str, const wchar_t ch)
 inline int atoi(char* str)
 {
     int res = 0;
-
     for (int i = 0; str[i] != '\0'; ++i)
         res = res * 10 + str[i] - '0';
     return res;
 }
 inline int wcsnicmp(const wchar_t* string1, const wchar_t* string2, size_t count)
 {
-    wchar_t f, l;
+    wchar_t f = 0, l = 0;
     if (!count) return 0;
     do {
         f = *string1 <= L'Z' && *string1 >= L'A'
@@ -1814,7 +2360,7 @@ inline int wcsnicmp(const wchar_t* string1, const wchar_t* string2, size_t count
 }
 inline int wcsicmp(const wchar_t* string1, const wchar_t* string2)
 {
-    wchar_t f, l;
+    wchar_t f = 0, l = 0;
     do {
         f = *string1 <= L'Z' && *string1 >= L'A'
             ? *string1 + L'a' - L'A'
@@ -1830,18 +2376,14 @@ inline int wcsicmp(const wchar_t* string1, const wchar_t* string2)
 inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
 {
     size_t size;
-    int i;
+    size_t i;
 
-    if (count <= 0 || !mbstr)
+    if (count <= 0 || !mbstr || !wcstr)
         return 0;
 
     if (!*mbstr)
         return 0;
 
-
-    if (wcstr == NULL) {
-        __debugbreak();
-    }
     for (size = 0, i = 0; i < count; size++) {
         int result;
 
@@ -1855,8 +2397,8 @@ inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
             return -1;
         }
         if (result == 0) {
-	        wcstr[size] = L'\0';
-	        break;
+            wcstr[size] = L'\0';
+            break;
         }
         i += result;
     }
@@ -1865,11 +2407,20 @@ inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
 #pragma function(memcpy)
 inline void* memcpy(char* dst, char* src, size_t len)
 {
-    if(CPUFeatures.cpu_FSRM)
+    if (CPUFeatures.cpu_FSRM)
         __movsb((unsigned char*)dst, (unsigned char*)src, len);
     else
-		for (int i = 0; i < len; i++)
-			dst[i] = src[i];
+        for (size_t i = 0; i < len; dst[i] = src[i], i++);
+    return dst;
+}
+#pragma function(memset)
+inline void* memset(void* dst, int val, size_t len)
+{
+    unsigned char* ptr_byte = dst;
+    if (CPUFeatures.cpu_FSRM)
+        __stosb(dst, (unsigned char)val, len);
+    else
+        for (size_t i = 0; i < len; ptr_byte[i] = (unsigned char)val, i++);
     return dst;
 }
 
@@ -2213,6 +2764,7 @@ static const USHORT RtlpStatusTable[] = {
     0x0037, 0x0000, 0x0 };
 #pragma endregion
 #define NtCurrentProcess()   ((HANDLE)(LONG_PTR)-1)
+#define NtCurrentThread()    ((HANDLE)(LONG_PTR)-2)
 #define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
 #define NtGetTid()           NtGetTeb()->ClientId.UniqueThread  /* GetCurrentThreadId() */
 #define GetLastError()       NtGetTeb()->LastErrorValue         /* GetLastError()*/
@@ -2220,14 +2772,14 @@ static const USHORT RtlpStatusTable[] = {
 #define GetLastNTError(err)  NtGetTeb()->LastStatusValue
 inline ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
-	if (status & 0x20000000) {
-    	return status;
+    if (status & 0x20000000) {
+        return status;
     }
     if ((status & 0xffff0000) == 0x80070000) {
-	    return status & 0x0000ffff;
+        return status & 0x0000ffff;
     }
     if ((status & 0xf0000000) == 0xd0000000) {
-	    status &= 0xcfffffff;
+        status &= 0xcfffffff;
     }
 
 
@@ -2246,11 +2798,11 @@ inline ULONG RtlNtStatusToDosError(NTSTATUS status)
             }
             Index += (Offset * (ULONG)RtlpRunTable[Entry].CodeSize);
             if (RtlpRunTable[Entry].CodeSize == 1) {
-	            return RtlpStatusTable[Index];
+                return RtlpStatusTable[Index];
 
             }
             return (ULONG)RtlpStatusTable[Index + 1] << 16 |
-	            (ULONG)RtlpStatusTable[Index];
+                (ULONG)RtlpStatusTable[Index];
         }
 
         Entry += 1;
@@ -2270,7 +2822,7 @@ inline ULONG RtlNtStatusToDosError(NTSTATUS status)
 #define SetLastNTError(err)  do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; teb->LastErrorValue = RtlNtStatusToDosError(err); } while(0)
 inline PTEB NtGetTeb()
 {
-    static PTEB Teb;
+    static PTEB Teb = NULL;
 
     if (Teb) return Teb;
 #if defined(_M_X64)
@@ -2290,7 +2842,7 @@ inline PTEB NtGetTeb()
 }
 inline PPEB NtGetPeb()
 {
-    static PPEB Peb;
+    static PPEB Peb = NULL;
     if(!Peb) Peb = NtGetTeb()->ProcessEnvironmentBlock;
     return Peb;
 }

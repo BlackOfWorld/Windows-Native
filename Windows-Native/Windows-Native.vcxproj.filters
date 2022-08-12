@@ -50,6 +50,9 @@
     <ClInclude Include="System\File\File.h">
       <Filter>System\File</Filter>
     </ClInclude>
+    <ClInclude Include="System\Process\CurrentProcess.h">
+      <Filter>System\Process</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="General.c" />
@@ -73,6 +76,9 @@
     </ClCompile>
     <ClCompile Include="System\File\File.c">
       <Filter>System\File</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Process\CurrentProcess.c">
+      <Filter>System\Process</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

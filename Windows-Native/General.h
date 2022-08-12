@@ -9,42 +9,49 @@ extern void NativeInit(void);
 
 struct Memory
 {
-	PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
-	PVOID(*AllocateVirtual)(DWORD dwSize, DWORD AllocFlags, DWORD Protect);
-	PVOID(*GetCurrentHeap)(void);
-	DWORD(*GetCurrentHeaps)(void);
-	BOOLEAN(*FreeHeap)(PVOID Address);
-	BOOLEAN(*FreeVirtual)(PVOID Address, SIZE_T dwSize, DWORD FreeType);
+    PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
+    PVOID(*AllocateVirtual)(DWORD dwSize, DWORD AllocFlags, DWORD Protect);
+    PVOID(*GetCurrentHeap)(void);
+    DWORD(*GetCurrentHeaps)(void);
+    BOOLEAN(*FreeHeap)(PVOID Address);
+    BOOLEAN(*FreeVirtual)(PVOID Address, SIZE_T dwSize, DWORD FreeType);
+};
+
+struct CurrentProcess
+{
+    BOOL(*DetectDebugger)(void);
+    UINT64(*GetCurrentId)(void);
 };
 
 struct Process
 {
-	BOOLEAN(*Create)(const WCHAR*, const WCHAR*);
-	DWORD(*Exists)(const WCHAR* processName);
-	NTSTATUS(*Terminate)(HANDLE processHandle, NTSTATUS exitStatus);
+    BOOLEAN(*Create)(const WCHAR*, const WCHAR*);
+    DWORD(*Exists)(const WCHAR* processName);
+    NTSTATUS(*Terminate)(HANDLE processHandle, NTSTATUS exitStatus);
+    struct CurrentProcess CurrentProcess;
 };
 
 struct Library
 {
-	PVOID(*GetModuleFunction)(const WCHAR* dllName, const CHAR* funcName);
-	PVOID(*GetFunctionByOrdinal)(PVOID hModule, DWORD Ordinal);
-	PVOID(*GetFunction)(PVOID hModule, const CHAR* funcName);
-	PVOID(*GetModule)(const WCHAR* dllName);
-	PVOID(*Load)(const CHAR*);
+    PVOID(*GetModuleFunction)(const WCHAR* dllName, const CHAR* funcName);
+    PVOID(*GetFunctionByOrdinal)(PVOID hModule, DWORD Ordinal);
+    PVOID(*GetFunction)(PVOID hModule, const CHAR* funcName);
+    PVOID(*GetModule)(const WCHAR* dllName);
+    PVOID(*Load)(const CHAR*);
 };
 struct File
 {
-	PHANDLE(*Create)(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
-	INT64(*Size)(HANDLE hFile);
-	BOOL(*Close)(HANDLE hFile);
+    PHANDLE(*Create)(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
+    INT64(*Size)(HANDLE hFile);
+    BOOL(*Close)(HANDLE hFile);
 };
 struct nativeLib
 {
-	BOOLEAN isInitialized;
-	struct Process Process;
-	struct Library Library;
-	struct Memory Memory;
-	struct File File;
+    BOOLEAN isInitialized;
+    struct Process Process;
+    struct Library Library;
+    struct Memory Memory;
+    struct File File;
 };
 
 extern struct nativeLib NativeLib;
