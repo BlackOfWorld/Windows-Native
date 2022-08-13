@@ -1,4 +1,5 @@
 #include "File.h"
+#define INVALID_FILE_SIZE                0xFFFFFFFF
 #define ERROR_FILE_NOT_FOUND             2L
 #define ERROR_FILE_EXISTS                80L
 #define ERROR_ALREADY_EXISTS             183L
@@ -209,11 +210,11 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 
     return FileHandle;
 }
-INT64 File_GetSize(HANDLE hFile)
+UINT64 File_GetSize(HANDLE hFile)
 {
     if (!NtQueryInformationFile) NtQueryInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryInformationFile");
-    FILE_STANDARD_INFORMATION FileStandard;
-    IO_STATUS_BLOCK IoStatusBlock;
+    FILE_STANDARD_INFORMATION FileStandard = {0};
+    IO_STATUS_BLOCK IoStatusBlock = {0};
 
     NTSTATUS errCode = NtQueryInformationFile(hFile,
         &IoStatusBlock,
@@ -223,7 +224,7 @@ INT64 File_GetSize(HANDLE hFile)
     SetLastNTError(errCode);
     if (NT_ERROR(errCode))
     {
-        return -1;
+        return INVALID_FILE_SIZE;
     }
 
     return FileStandard.EndOfFile.QuadPart;

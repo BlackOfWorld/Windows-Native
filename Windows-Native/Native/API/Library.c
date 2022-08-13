@@ -2,7 +2,6 @@
 #include "Library.h"
 
 #include "Loader.h"
-#include "Memory/Memory.h"
 
 EXTERNC IMAGE_DOS_HEADER __ImageBase;
 #define HINST_THISCOMPONENT ((HINSTANCE)&__ImageBase)

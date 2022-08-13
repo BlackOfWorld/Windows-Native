@@ -1,9 +1,8 @@
 #pragma once
 #include <intrin.h>
-#include <immintrin.h>
 #define MAXIMUM_SUPPORTED_EXTENSION     512
 #define SIZE_OF_80387_REGISTERS      80
-struct
+extern struct _CPUFeatures
 {
     char cpu_FSRM;       //Fast Short REP MOV https://www-ssl.intel.com/content/www/us/en/architecture-and-technology/64-ia-32-architectures-optimization-manual.html
     char cpu_SGX;        //Software Guard Extensions
@@ -2335,7 +2334,7 @@ inline const wchar_t* strchrW(const wchar_t* str, const wchar_t ch)
     while (*str && *str != ch) str++;
     return *str == ch ? str : NULL;
 }
-inline int atoi(char* str)
+inline int atoi(char const* str)
 {
     int res = 0;
     for (int i = 0; str[i] != '\0'; ++i)
@@ -2373,7 +2372,7 @@ inline int wcsicmp(const wchar_t* string1, const wchar_t* string2)
     } while (f && f == l);
     return f - l;
 }
-inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
+inline size_t mbstowcs(wchar_t* wcstr, char const* mbstr, size_t count)
 {
     size_t size;
     size_t i;
@@ -2405,12 +2404,12 @@ inline size_t mbstowcs(wchar_t* wcstr, const unsigned char* mbstr, size_t count)
     return size;
 }
 #pragma function(memcpy)
-inline void* memcpy(char* dst, char* src, size_t len)
+inline void* memcpy(void* dst, const void* src, size_t len)
 {
     if (CPUFeatures.cpu_FSRM)
         __movsb((unsigned char*)dst, (unsigned char*)src, len);
     else
-        for (size_t i = 0; i < len; dst[i] = src[i], i++);
+        for (size_t i = 0; i < len; ((char*)dst)[i] = ((char*)src)[i], i++);
     return dst;
 }
 #pragma function(memset)
@@ -2770,7 +2769,7 @@ static const USHORT RtlpStatusTable[] = {
 #define GetLastError()       NtGetTeb()->LastErrorValue         /* GetLastError()*/
 #define SetLastError(err)    NtGetTeb()->LastErrorValue = err   /* SetLastError()*/
 #define GetLastNTError(err)  NtGetTeb()->LastStatusValue
-inline ULONG RtlNtStatusToDosError(NTSTATUS status)
+static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
     if (status & 0x20000000) {
         return status;
@@ -2850,3 +2849,5 @@ inline PPEB NtGetPeb()
 extern void cpu_detect_features(void);
 extern NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
 extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);
+#undef SIZE_OF_80387_REGISTERS
+#undef MAXIMUM_SUPPORTED_EXTENSION

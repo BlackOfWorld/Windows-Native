@@ -1,5 +1,5 @@
 #include "framework.h"
-
+struct _CPUFeatures CPUFeatures;
 #define CPU_FEATURE_SGX        1 << 2
 #define CPU_FEATURE_FSRM       1 << 4
 #define CPU_FEATURE_AVX2       1 << 5

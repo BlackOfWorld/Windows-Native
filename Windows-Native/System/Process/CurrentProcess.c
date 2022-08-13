@@ -20,6 +20,15 @@ BOOL CurrentProcess_DetectDebugger(void)
     return isDebugged;
 }
 
+BOOL CurrentProcess_UnderWine(void)
+{
+    return NativeLib.Library.GetModuleFunction(L"ntdll.dll", "wine_get_build_id") ?
+        true :
+    NativeLib.Library.GetModuleFunction(L"ntdll.dll", "wine_get_version") ?
+        true :
+        false;
+}
+
 UINT64 CurrentProcess_GetId(void)
 {
     return (UINT64)NtGetPid();
