@@ -1,7 +1,5 @@
 ﻿#include <framework.h>
 #include "Process.h"
-#define OffsetToPtr(Snapshot, Offset)                                          \
-  ((ULONG_PTR)((Snapshot) + 1) + (ULONG_PTR)(Offset))
 #define ERROR_NO_MORE_FILES              18L
 typedef struct tagPROCESSENTRY32W {
     DWORD     dwSize;
@@ -39,6 +37,7 @@ typedef struct _PS_ATTRIBUTE_LIST PS_ATTRIBUTE_LIST, * PPS_ATTRIBUTE_LIST;
 
 
 
+#if 0
 PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 {
     static NTSTATUS(__stdcall * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessAccess, ACCESS_MASK ThreadAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
@@ -47,6 +46,7 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     //NtCreateUserProcess(hProcess, hThread,  )
     return false;
 }
+#endif
 
 DWORD Process_Exists(const WCHAR* processName)
 {
@@ -60,7 +60,7 @@ DWORD Process_Exists(const WCHAR* processName)
         SetLastNTError(status);
         return -1;
     }
-    PVOID buffer = NativeLib.Memory.AllocateVirtual(Size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    PVOID buffer = NativeLib.Memory.AllocateHeap(Size, true);
     if (!buffer)
     {
         __debugbreak();
@@ -70,7 +70,7 @@ DWORD Process_Exists(const WCHAR* processName)
     if (!NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, psi, Size, NULL)))
     {
         SetLastNTError(status);
-        NativeLib.Memory.FreeVirtual(buffer, Size, MEM_RELEASE);
+        NativeLib.Memory.FreeHeap(buffer);
         return -1;
     }
     while (psi->NextEntryOffset)
@@ -81,7 +81,7 @@ DWORD Process_Exists(const WCHAR* processName)
         break;
     }
 
-    NativeLib.Memory.FreeVirtual(buffer, Size, MEM_RELEASE);
+    NativeLib.Memory.FreeHeap(buffer);
     return pId;
 }
 

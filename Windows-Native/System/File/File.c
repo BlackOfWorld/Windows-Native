@@ -97,8 +97,6 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
     IO_STATUS_BLOCK IoStatusBlock;
     UNICODE_STRING NtPathU;
     HANDLE FileHandle;
-    PVOID EaBuffer = NULL;
-    ULONG EaLength = 0;
     ULONG Flags = 0;
     if (!fileName || !fileName[0])
     {
@@ -181,7 +179,7 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 
     //TODO: Validate and translate from DOS Path to NT Path internally and don't use ntdll
     RTL_RELATIVE_NAME_U relName;
-    if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName,    &NtPathU, NULL, &relName)))
+    if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName, &NtPathU, NULL, &relName)))
     {
         SetLastError(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
@@ -189,8 +187,7 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
     BOOLEAN TrailingBackslash = NtPathU.Length >= sizeof(WCHAR) && NtPathU.Buffer[NtPathU.Length / sizeof(WCHAR) - 1];
     InitializeObjectAttributes(&ObjectAttributes, &NtPathU, !(FlagsAndAttributes & FILE_FLAG_POSIX_SEMANTICS) ? OBJ_CASE_INSENSITIVE : 0, NULL, NULL);
     NTSTATUS status = NtCreateFile(&FileHandle, Access, &ObjectAttributes, &IoStatusBlock, NULL, FileAttributes, ShareMode, CreationDisposition, Flags, NULL, 0);
-     NativeLib.Memory.FreeHeap(NtPathU.Buffer);
-    if (!EaBuffer) NativeLib.Memory.FreeHeap(EaBuffer);
+    NativeLib.Memory.FreeHeap(NtPathU.Buffer);
     if (NT_ERROR(status))
     {
         if (status == STATUS_OBJECT_NAME_COLLISION && CreationDisposition == FILE_CREATE)
@@ -213,14 +210,10 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 UINT64 File_GetSize(HANDLE hFile)
 {
     if (!NtQueryInformationFile) NtQueryInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryInformationFile");
-    FILE_STANDARD_INFORMATION FileStandard = {0};
-    IO_STATUS_BLOCK IoStatusBlock = {0};
+    FILE_STANDARD_INFORMATION FileStandard = { 0 };
+    IO_STATUS_BLOCK IoStatusBlock = { 0 };
 
-    NTSTATUS errCode = NtQueryInformationFile(hFile,
-        &IoStatusBlock,
-        &FileStandard,
-        sizeof(FILE_STANDARD_INFORMATION),
-        FileStandardInformation);
+    NTSTATUS errCode = NtQueryInformationFile(hFile, &IoStatusBlock, &FileStandard, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation);
     SetLastNTError(errCode);
     if (NT_ERROR(errCode))
     {

@@ -20,14 +20,11 @@
 
 PVOID Memory_AllocateHeap(DWORD dwSize, BOOL zeroMem)
 {
-    //static NTSTATUS(__stdcall * NtMapViewOfSection)(HANDLE SectionHandle, HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, SIZE_T CommitSize, PLARGE_INTEGER SectionOffset, PSIZE_T ViewSize, SECTION_INHERIT InheritDisposition, ULONG AllocationType, ULONG Protect);
-    //if (!NtMapViewOfSection) NtMapViewOfSection = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtMapViewOfSection");
-    //NtMapViewOfSection()
     static PVOID(_stdcall * RtlAllocateHeap)(PVOID HeapHandle, ULONG Flags, SIZE_T Size);
     if (!RtlAllocateHeap) RtlAllocateHeap = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlAllocateHeap");
     return RtlAllocateHeap(Memory.GetCurrentHeap(), zeroMem ? HEAP_ZERO_MEMORY : 0, dwSize);
 }
-PVOID Memory_AllocateVirtual(DWORD dwSize, DWORD AllocFlags, DWORD Protect)
+PVOID Memory_AllocateVirtual(size_t dwSize, DWORD AllocFlags, DWORD Protect)
 {
     static NTSTATUS(__stdcall * NtAllocateVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, PSIZE_T RegionSize, ULONG AllocationType, ULONG Protect);
     if (!NtAllocateVirtualMemory) NtAllocateVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtAllocateVirtualMemory");
@@ -75,19 +72,19 @@ inline PVOID Memory_GetCurrentHeap(void) {
     if (!heap) heap = NtGetPeb()->ProcessHeap;
     return heap;
 }
-DWORD Memory_GetCurrentHeaps(void) {
-    static DWORD(__stdcall * GetProcessHeaps)(DWORD NumberOfHeaps, PHANDLE ProcessHeaps);
-    if (!GetProcessHeaps) GetProcessHeaps = NativeLib.Library.GetModuleFunction(L"kernel32.dll", "GetProcessHeaps");
-    DWORD nHeaps = GetProcessHeaps(0, NULL);
-    return GetProcessHeaps(0, NULL);
-}
+//DWORD Memory_GetCurrentHeaps(void) {
+//    static DWORD(__stdcall * GetProcessHeaps)(DWORD NumberOfHeaps, PHANDLE ProcessHeaps);
+//    if (!GetProcessHeaps) GetProcessHeaps = NativeLib.Library.GetModuleFunction(L"kernel32.dll", "GetProcessHeaps");
+//    DWORD nHeaps = GetProcessHeaps(0, NULL);
+//    return GetProcessHeaps(0, NULL);
+//}
 
 
 struct Memory Memory = {
     .AllocateHeap = &Memory_AllocateHeap,
     .AllocateVirtual = &Memory_AllocateVirtual,
     .GetCurrentHeap = &Memory_GetCurrentHeap,
-    .GetCurrentHeaps = &Memory_GetCurrentHeaps,
+    //.GetCurrentHeaps = &Memory_GetCurrentHeaps,
     .FreeHeap = &Memory_FreeHeap,
     .FreeVirtual = &Memory_FreeVirtual
 };

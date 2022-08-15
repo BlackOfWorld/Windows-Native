@@ -1,4 +1,7 @@
 #pragma once
+#if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
+#error "This architecture is currently unsupported"
+#endif
 #include <intrin.h>
 #define MAXIMUM_SUPPORTED_EXTENSION     512
 #define SIZE_OF_80387_REGISTERS      80
@@ -18,10 +21,6 @@ extern struct _CPUFeatures
     char cpu_FSRS;       //Fast Short REP STOSB
     char cpu_FSRC;       //Fast Short REP CMPSB and SCASB
 } CPUFeatures;
-
-#if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
-#error "This architecture is currently unsupported"
-#endif
 
 #ifdef __cplusplus
 #   define EXTERNC extern "C"
@@ -54,9 +53,7 @@ extern struct _CPUFeatures
 #define FIELD_OFFSET(type, field)    ((LONG)__builtin_offsetof(type, field))
 #define UFIELD_OFFSET(type, field)    ((DWORD)__builtin_offsetof(type, field))
 #endif
-#endif
-
-#ifndef FIELD_OFFSET
+#else
 #define FIELD_OFFSET(type, field)    ((LONG)(LONG_PTR)&(((type *)0)->field))
 #define UFIELD_OFFSET(type, field)    ((DWORD)(LONG_PTR)&(((type *)0)->field))
 #endif
@@ -182,7 +179,7 @@ typedef UCHAR* STRING;
 typedef ULONGLONG DWORDLONG, * PDWORDLONG;
 typedef float FLOAT;
 typedef ULONG_PTR DWORD_PTR;
-typedef int BOOL, *PBOOL, *LPBOOL;
+typedef int BOOL, * PBOOL, * LPBOOL;
 typedef BYTE BOOLEAN, * PBOOLEAN;
 typedef WCHAR* BSTR;
 typedef int INT, * LPINT;
@@ -455,7 +452,7 @@ typedef struct _CLIENT_ID
 {
     VOID* UniqueProcess;
     VOID* UniqueThread;
-} CLIENT_ID, *PCLIENT_ID;
+} CLIENT_ID, * PCLIENT_ID;
 
 typedef struct _UNICODE_STRING {
     unsigned short    Length;
@@ -549,7 +546,7 @@ typedef struct _RTL_CRITICAL_SECTION
     PVOID OwningThread;
     PVOID LockSemaphore;
     ULONG SpinCount;
-} RTL_CRITICAL_SECTION, *PRTL_CRITICAL_SECTION;
+} RTL_CRITICAL_SECTION, * PRTL_CRITICAL_SECTION;
 typedef struct _RTL_DRIVE_LETTER_CURDIR
 {
     WORD Flags;
@@ -623,7 +620,7 @@ typedef struct _HEAP_EXTENDED_ENTRY
     USHORT UnusedBytesLength;                                               //0xc
     UCHAR EntryOffset;                                                      //0xe
     UCHAR ExtendedBlockSignature;                                           //0xf
-} HEAP_EXTENDED_ENTRY, *PHEAP_EXTENDED_ENTRY;
+} HEAP_EXTENDED_ENTRY, * PHEAP_EXTENDED_ENTRY;
 typedef struct _HEAP_UNPACKED_ENTRY
 {
     VOID* PreviousBlockPrivateData;                                         //0x0
@@ -648,7 +645,7 @@ typedef struct _HEAP_UNPACKED_ENTRY
         };
         ULONGLONG CompactHeader;                                            //0x8
     };
-} HEAP_UNPACKED_ENTRY, *PHEAP_UNPACKED_ENTRY;
+} HEAP_UNPACKED_ENTRY, * PHEAP_UNPACKED_ENTRY;
 typedef struct _HEAP_ENTRY
 {
     union
@@ -719,7 +716,7 @@ typedef struct _HEAP_ENTRY
             };
         };
     };
-} HEAP_ENTRY, *PHEAP_ENTRY;
+} HEAP_ENTRY, * PHEAP_ENTRY;
 typedef struct _HEAP_SEGMENT
 {
     HEAP_ENTRY Entry;                                               //0x0
@@ -736,20 +733,20 @@ typedef struct _HEAP_SEGMENT
     USHORT SegmentAllocatorBackTraceIndex;                                  //0x58
     USHORT Reserved;                                                        //0x5a
     LIST_ENTRY UCRSegmentList;                                      //0x60
-} HEAP_SEGMENT, *PHEAP_SEGMENT;
+} HEAP_SEGMENT, * PHEAP_SEGMENT;
 typedef union _RTL_RUN_ONCE
 {
     VOID* Ptr;                                                              //0x0
     ULONGLONG Value;                                                        //0x0
     ULONGLONG State : 2;                                                    //0x0
-} RTL_RUN_ONCE, *PRTL_RUN_ONCE;
+} RTL_RUN_ONCE, * PRTL_RUN_ONCE;
 typedef struct _RTL_HEAP_MEMORY_LIMIT_DATA
 {
     ULONGLONG CommitLimitBytes;                                             //0x0
     ULONGLONG CommitLimitFailureCode;                                       //0x8
     ULONGLONG MaxAllocationSizeBytes;                                       //0x10
     ULONGLONG AllocationLimitFailureCode;                                   //0x18
-} RTL_HEAP_MEMORY_LIMIT_DATA, *PRTL_HEAP_MEMORY_LIMIT_DATA;
+} RTL_HEAP_MEMORY_LIMIT_DATA, * PRTL_HEAP_MEMORY_LIMIT_DATA;
 typedef struct _HEAP_COUNTERS
 {
     ULONGLONG TotalMemoryReserved;                                          //0x0
@@ -775,12 +772,12 @@ typedef struct _HEAP_COUNTERS
     ULONGLONG InBlockDeccomitSize;                                          //0x60
     ULONGLONG HighWatermarkSize;                                            //0x68
     ULONGLONG LastPolledSize;                                               //0x70
-} HEAP_COUNTERS, *PHEAP_COUNTERS;
+} HEAP_COUNTERS, * PHEAP_COUNTERS;
 typedef struct _HEAP_TUNING_PARAMETERS
 {
     ULONG CommittThresholdShift;                                            //0x0
     ULONGLONG MaxPreCommittThreshold;                                       //0x8
-} HEAP_TUNING_PARAMETERS, *PHEAP_TUNING_PARAMETERS;
+} HEAP_TUNING_PARAMETERS, * PHEAP_TUNING_PARAMETERS;
 typedef struct _HEAP_TAG_ENTRY
 {
     ULONG Allocs;                                                           //0x0
@@ -789,7 +786,7 @@ typedef struct _HEAP_TAG_ENTRY
     USHORT TagIndex;                                                        //0x10
     USHORT CreatorBackTraceIndex;                                           //0x12
     WCHAR TagName[24];                                                      //0x14
-} HEAP_TAG_ENTRY, *PHEAP_TAG_ENTRY;
+} HEAP_TAG_ENTRY, * PHEAP_TAG_ENTRY;
 typedef struct _OWNER_ENTRY
 {
     ULONGLONG OwnerThread;                                                  //0x0
@@ -804,7 +801,7 @@ typedef struct _OWNER_ENTRY
         };
         ULONG TableSize;                                                    //0x8
     };
-} OWNER_ENTRY, *POWNER_ENTRY;
+} OWNER_ENTRY, * POWNER_ENTRY;
 typedef struct _ERESOURCE
 {
     LIST_ENTRY SystemResourcesList;                                 //0x0
@@ -833,7 +830,7 @@ typedef struct _ERESOURCE
         ULONGLONG CreatorBackTraceIndex;                                    //0x58
     };
     ULONGLONG SpinLock;                                                     //0x60
-} ERESOURCE, *PERESOURCE;
+} ERESOURCE, * PERESOURCE;
 typedef struct _HEAP_LOCK
 {
     union
@@ -841,13 +838,13 @@ typedef struct _HEAP_LOCK
         RTL_CRITICAL_SECTION CriticalSection;                       //0x0
         ERESOURCE Resource;                                         //0x0
     } Lock;                                                                 //0x0
-} HEAP_LOCK, *PHEAP_LOCK;
+} HEAP_LOCK, * PHEAP_LOCK;
 typedef struct _HEAP_PSEUDO_TAG_ENTRY
 {
     ULONG Allocs;                                                           //0x0
     ULONG Frees;                                                            //0x4
     ULONGLONG Size;                                                         //0x8
-} HEAP_PSEUDO_TAG_ENTRY, *PHEAP_PSEUDO_TAG_ENTRY;
+} HEAP_PSEUDO_TAG_ENTRY, * PHEAP_PSEUDO_TAG_ENTRY;
 typedef struct _HEAP
 {
     union
@@ -915,25 +912,25 @@ typedef struct _HEAP
     volatile UCHAR FrontEndHeapStatusBitmap[129];                           //0x1b2
     HEAP_COUNTERS Counters;                                         //0x238
     HEAP_TUNING_PARAMETERS TuningParameters;                        //0x2b0
-} HEAP, *PHEAP;
+} HEAP, * PHEAP;
 typedef struct _PEB
 {
     UCHAR InheritedAddressSpace;
     UCHAR ReadImageFileExecOptions;
     UCHAR BeingDebugged;
-     union
+    union
     {
         UCHAR BitField;                                                     //0x3
         struct
         {
-            UCHAR ImageUsesLargePages:1;                                    //0x3
-            UCHAR IsProtectedProcess:1;                                     //0x3
-            UCHAR IsImageDynamicallyRelocated:1;                            //0x3
-            UCHAR SkipPatchingUser32Forwarders:1;                           //0x3
-            UCHAR IsPackagedProcess:1;                                      //0x3
-            UCHAR IsAppContainer:1;                                         //0x3
-            UCHAR IsProtectedProcessLight:1;                                //0x3
-            UCHAR IsLongPathAwareProcess:1;                                 //0x3
+            UCHAR ImageUsesLargePages : 1;                                    //0x3
+            UCHAR IsProtectedProcess : 1;                                     //0x3
+            UCHAR IsImageDynamicallyRelocated : 1;                            //0x3
+            UCHAR SkipPatchingUser32Forwarders : 1;                           //0x3
+            UCHAR IsPackagedProcess : 1;                                      //0x3
+            UCHAR IsAppContainer : 1;                                         //0x3
+            UCHAR IsProtectedProcessLight : 1;                                //0x3
+            UCHAR IsLongPathAwareProcess : 1;                                 //0x3
         };
     };
     PVOID Mutant;
@@ -1099,7 +1096,7 @@ typedef struct _CONTEXT {
     DWORD   SegSs;
 
     BYTE    ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
-} CONTEXT, *PCONTEXT;
+} CONTEXT, * PCONTEXT;
 struct _GDI_TEB_BATCH
 {
     ULONG Offset : 31;                                                        //0x0
@@ -1250,7 +1247,7 @@ typedef struct _TEB
     VOID* ReservedForWdf;                                                   //0x1818
     ULONGLONG ReservedForCrt;                                               //0x1820
     struct _GUID EffectiveContainerId;                                      //0x1828
-} TEB, *PTEB;
+} TEB, * PTEB;
 
 typedef struct _IMAGE_DOS_HEADER {      // DOS .EXE header
     WORD   e_magic;                     // Magic number
@@ -1591,7 +1588,7 @@ typedef struct _OBJECT_ATTRIBUTES {
     ULONG           Attributes;
     PVOID           SecurityDescriptor;
     PVOID           SecurityQualityOfService;
-} OBJECT_ATTRIBUTES, *POBJECT_ATTRIBUTES;
+} OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
 
 #ifdef _WIN64
 typedef IMAGE_NT_HEADERS64                  IMAGE_NT_HEADERS;
@@ -1685,7 +1682,7 @@ typedef struct _IO_STATUS_BLOCK
         VOID* Pointer;                                                      //0x0
     };
     ULONGLONG Information;                                                  //0x8
-} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+} IO_STATUS_BLOCK, * PIO_STATUS_BLOCK;
 
 typedef enum _FILE_INFORMATION_CLASS
 {
@@ -2017,7 +2014,7 @@ typedef enum _SYSTEM_INFORMATION_CLASS
     SystemCodeIntegrityClearDynamicStores = 225,
     SystemPoolZeroingInformation = 227,
     MaxSystemInfoClass = 228
-} SYSTEM_INFORMATION_CLASS, *PSYSTEM_INFORMATION_CLASS;
+} SYSTEM_INFORMATION_CLASS, * PSYSTEM_INFORMATION_CLASS;
 typedef LONG KPRIORITY;
 typedef enum _KWAIT_REASON {
     Executive,
@@ -2084,7 +2081,7 @@ typedef struct _VM_COUNTERS {
     SIZE_T QuotaNonPagedPoolUsage;
     SIZE_T PagefileUsage;
     SIZE_T PeakPagefileUsage;
-} VM_COUNTERS, *PVM_COUNTERS;
+} VM_COUNTERS, * PVM_COUNTERS;
 typedef struct _IO_COUNTERS {
     ULONGLONG  ReadOperationCount;
     ULONGLONG  WriteOperationCount;
@@ -2092,7 +2089,7 @@ typedef struct _IO_COUNTERS {
     ULONGLONG ReadTransferCount;
     ULONGLONG WriteTransferCount;
     ULONGLONG OtherTransferCount;
-} IO_COUNTERS, *PIO_COUNTERS;
+} IO_COUNTERS, * PIO_COUNTERS;
 
 typedef struct _SYSTEM_PROCESS_INFORMATION {
     ULONG NextEntryOffset;
@@ -2117,7 +2114,7 @@ typedef struct _KSYSTEM_TIME
     ULONG LowPart;                                                          //0x0
     LONG High1Time;                                                         //0x4
     LONG High2Time;                                                         //0x8
-} KSYSTEM_TIME, *PKSYSTEM_TIME;
+} KSYSTEM_TIME, * PKSYSTEM_TIME;
 typedef enum _ALTERNATIVE_ARCHITECTURE_TYPE
 {
     StandardDesign = 0,
@@ -2159,7 +2156,7 @@ typedef struct _XSTATE_CONFIGURATION
     ULONGLONG ExtendedFeatureDisableFeatures;                               //0x338
     ULONG AllNonLargeFeatureSize;                                           //0x340
     ULONG Spare;                                                            //0x344
-} XSTATE_CONFIGURATION, *PXSTATE_CONFIGURATION;
+} XSTATE_CONFIGURATION, * PXSTATE_CONFIGURATION;
 typedef struct _KUSER_SHARED_DATA
 {
     ULONG TickCountLowDeprecated;                                           //0x0
@@ -2283,7 +2280,7 @@ typedef struct _KUSER_SHARED_DATA
     XSTATE_CONFIGURATION XState;                                            //0x3d8
     KSYSTEM_TIME FeatureConfigurationChangeStamp;                           //0x720
     ULONG Spare;                                                            //0x72c
-} KUSER_SHARED_DATA, *PKUSER_SHARED_DATA;
+} KUSER_SHARED_DATA, * PKUSER_SHARED_DATA;
 #define TU(c) (((c > 96) && (c < 123)) ? (c - 32) : (c))
 inline int stricmpA(const char* a, const char* b)
 {
@@ -2388,7 +2385,8 @@ inline size_t mbstowcs(wchar_t* wcstr, char const* mbstr, size_t count)
 
         if (mbstr[i] == 0) {
             result = 0;
-        } else {
+        }
+        else {
             wcstr[size] = mbstr[i];
             result = 1;
         }
@@ -2769,82 +2767,12 @@ static const USHORT RtlpStatusTable[] = {
 #define GetLastError()       NtGetTeb()->LastErrorValue         /* GetLastError()*/
 #define SetLastError(err)    NtGetTeb()->LastErrorValue = err   /* SetLastError()*/
 #define GetLastNTError(err)  NtGetTeb()->LastStatusValue
-static ULONG RtlNtStatusToDosError(NTSTATUS status)
-{
-    if (status & 0x20000000) {
-        return status;
-    }
-    if ((status & 0xffff0000) == 0x80070000) {
-        return status & 0x0000ffff;
-    }
-    if ((status & 0xf0000000) == 0xd0000000) {
-        status &= 0xcfffffff;
-    }
-
-
-    ULONG Entry = 0;
-    ULONG Index = 0;
-    do {
-        if (status >= RtlpRunTable[Entry + 1].BaseCode) {
-            Index += RtlpRunTable[Entry].RunLength * RtlpRunTable[Entry].CodeSize;
-
-        }
-        else {
-            ULONG Offset = status - RtlpRunTable[Entry].BaseCode;
-            if (Offset >= RtlpRunTable[Entry].RunLength) {
-                break;
-
-            }
-            Index += (Offset * (ULONG)RtlpRunTable[Entry].CodeSize);
-            if (RtlpRunTable[Entry].CodeSize == 1) {
-                return RtlpStatusTable[Index];
-
-            }
-            return (ULONG)RtlpStatusTable[Index + 1] << 16 |
-                (ULONG)RtlpStatusTable[Index];
-        }
-
-        Entry += 1;
-    } while (Entry < (sizeof(RtlpRunTable) / sizeof(RUN_ENTRY)));
-
-
-    if (status >> 16 == 0xC001) {
-        return status & 0xFFFF;
-    }
-
-
-    return ERROR_MR_MID_NOT_FOUND;
-}
 #define INVALID_HANDLE_VALUE             ((HANDLE)(LONG_PTR)-1)
 #define ERROR_INVALID_PARAMETER          87L
-#define SetLastNTStatus(err) do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; } while(0)
-#define SetLastNTError(err)  do {PTEB teb = NtGetTeb(); teb->LastStatusValue = err; teb->LastErrorValue = RtlNtStatusToDosError(err); } while(0)
-inline PTEB NtGetTeb()
-{
-    static PTEB Teb = NULL;
-
-    if (Teb) return Teb;
-#if defined(_M_X64)
-    Teb = (PTEB)(__readgsqword(0x30));
-#elif defined(_M_IX86)
-    Teb = (PTEB)(__readfsdword(0x18));
-#elif defined(_M_ARM)
-    Teb = *(PTEB)(_MoveFromCoprocessor(15, 0, 13, 0, 2));
-#elif defined(_M_ARM64)
-    Teb = *(PTEB*)(__getReg(18)); // TEB in x18
-#elif defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_PPC)
-    Teb = *(PTEB*)((size_t)_rdteb()); // TEB in r13
-#elif defined(_M_MIPS)
-    Teb = *(PTEB*)(__gregister_get(13)); // TEB in r13
-#endif
-    return Teb;
-}
-inline PPEB NtGetPeb()
-{
-    static PPEB Peb = NULL;
-    if(!Peb) Peb = NtGetTeb()->ProcessEnvironmentBlock;
-    return Peb;
-}
+extern inline void SetLastNTStatus(ULONG err);
+extern inline void SetLastNTError(ULONG err);
+extern PTEB NtGetTeb(void);
+extern inline PPEB NtGetPeb(void);
 
 extern void cpu_detect_features(void);
 extern NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
