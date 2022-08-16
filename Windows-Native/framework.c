@@ -1,4 +1,5 @@
 #include "framework.h"
+#include "General.h"
 struct _CPUFeatures CPUFeatures;
 #define CPU_FEATURE_SGX        1 << 2
 #define CPU_FEATURE_FSRM       1 << 4
@@ -84,7 +85,7 @@ NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR Source
     DestinationString->Buffer = (PWCHAR)SourceString;
     if (!SourceString) return STATUS_SUCCESS;
 
-    const size_t Size = strlenW(SourceString) * sizeof(WCHAR);
+    const USHORT Size = (USHORT)strlenW(SourceString) * sizeof(WCHAR);
     if (Size > MaxSize) return STATUS_NAME_TOO_LONG;
     DestinationString->Length = (USHORT)Size;
     DestinationString->MaximumLength = (USHORT)Size + sizeof(WCHAR);
@@ -92,6 +93,11 @@ NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR Source
 }
 static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
+#if USE_ERRORS_FROM_NTDLL
+    static ULONG(__stdcall * RtlNtStatusToDosErrorNoTeb)(NTSTATUS Status) = NULL;
+    if (!RtlNtStatusToDosErrorNoTeb) RtlNtStatusToDosErrorNoTeb = NativeLib.Library.GetModuleFunction(L"ntdll", "RtlNtStatusToDosErrorNoTeb");
+    return RtlNtStatusToDosErrorNoTeb(status);
+#else
     if (status & 0x20000000) {
         return status;
     }
@@ -127,6 +133,7 @@ static ULONG RtlNtStatusToDosError(NTSTATUS status)
     }
 
     return ERROR_MR_MID_NOT_FOUND;
+#endif
 }
 void SetLastNTStatusInternal(ULONG err, bool Error)
 {

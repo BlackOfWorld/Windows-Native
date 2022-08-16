@@ -24,7 +24,8 @@
     <ClInclude Include="Memory\Memory.h" />
     <ClInclude Include="Native\API\Library.h" />
     <ClInclude Include="Native\API\Loader.h" />
-    <ClInclude Include="System\File\File.h" />
+    <ClInclude Include="System\Filesystem\File.h" />
+    <ClInclude Include="System\Filesystem\Path.h" />
     <ClInclude Include="System\Process\CurrentProcess.h" />
     <ClInclude Include="System\Process\Process.h" />
     <ClInclude Include="System\Registry\Registry.h" />
@@ -35,7 +36,8 @@
     <ClCompile Include="Memory\Memory.c" />
     <ClCompile Include="Native\API\Library.c" />
     <ClCompile Include="Native\API\Loader.c" />
-    <ClCompile Include="System\File\File.c" />
+    <ClCompile Include="System\Filesystem\File.c" />
+    <ClCompile Include="System\Filesystem\Path.c" />
     <ClCompile Include="System\Process\CurrentProcess.c" />
     <ClCompile Include="System\Process\Process.c" />
     <ClCompile Include="System\Registry\Registry.c" />

@@ -18,7 +18,6 @@ void* Library_GetModule(const WCHAR* dllName)
     }
     return NULL;
 }
-PVOID Library_GetModuleFunction(const WCHAR* dllName, const char* funcName);
 PVOID HandleForwardedFunction(PVOID hModule, ULONG_PTR pFuncAddr)
 {
     char* strAddr = (char*)(ULONG_PTR)hModule + pFuncAddr;

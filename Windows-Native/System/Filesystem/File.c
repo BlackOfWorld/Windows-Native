@@ -4,24 +4,12 @@
 #define ERROR_FILE_EXISTS                80L
 #define ERROR_ALREADY_EXISTS             183L
 
-typedef struct _RTLP_CURDIR_REF
-{
-    LONG ReferenceCount;
-    HANDLE DirectoryHandle;
-} RTLP_CURDIR_REF, * PRTLP_CURDIR_REF;
-
-typedef struct _RTL_RELATIVE_NAME_U
-{
-    UNICODE_STRING RelativeName;
-    HANDLE ContainingDirectory;
-    PRTLP_CURDIR_REF CurDirRef;
-} RTL_RELATIVE_NAME_U, * PRTL_RELATIVE_NAME_U;
-#define ERROR_PATH_NOT_FOUND             3
-#define CREATE_NEW                         1
-#define CREATE_ALWAYS                     2
-#define OPEN_EXISTING                     3
-#define OPEN_ALWAYS                         4
-#define TRUNCATE_EXISTING                 5
+#define ERROR_PATH_NOT_FOUND                    3
+#define CREATE_NEW                              1
+#define CREATE_ALWAYS                           2
+#define OPEN_EXISTING                           3
+#define OPEN_ALWAYS                             4
+#define TRUNCATE_EXISTING                       5
 
 #define FILE_DIRECTORY_FILE                     0x00000001
 #define FILE_WRITE_THROUGH                      0x00000002
@@ -46,12 +34,12 @@ typedef struct _RTL_RELATIVE_NAME_U
 #define FILE_COPY_STRUCTURED_STORAGE            0x00000041
 #define FILE_STRUCTURED_STORAGE                 0x00000441
 
-#define FILE_SUPERSEDE                            0x00000000
-#define FILE_OPEN                                0x00000001
-#define FILE_CREATE                                0x00000002
+#define FILE_SUPERSEDE                          0x00000000
+#define FILE_OPEN                               0x00000001
+#define FILE_CREATE                             0x00000002
 #define FILE_OPEN_IF                            0x00000003
-#define FILE_OVERWRITE                            0x00000004
-#define FILE_OVERWRITE_IF                        0x00000005
+#define FILE_OVERWRITE                          0x00000004
+#define FILE_OVERWRITE_IF                       0x00000005
 #define FILE_MAXIMUM_DISPOSITION                0x00000005
 
 #define FILE_SUPERSEDED                         0x00000000
@@ -61,34 +49,29 @@ typedef struct _RTL_RELATIVE_NAME_U
 #define FILE_EXISTS                             0x00000004
 #define FILE_DOES_NOT_EXIST                     0x00000005
 
-#define FILE_FLAG_WRITE_THROUGH                    0x80000000
+#define FILE_FLAG_WRITE_THROUGH                 0x80000000
 #define FILE_FLAG_OVERLAPPED                    0x40000000
-#define FILE_FLAG_NO_BUFFERING                    0x20000000
-#define FILE_FLAG_RANDOM_ACCESS                    0x10000000
-#define FILE_FLAG_SEQUENTIAL_SCAN                0x08000000
-#define FILE_FLAG_DELETE_ON_CLOSE                0x04000000
-#define FILE_FLAG_BACKUP_SEMANTICS                0x02000000
-#define FILE_FLAG_POSIX_SEMANTICS                0x01000000
-#define FILE_FLAG_SESSION_AWARE                    0x00800000
+#define FILE_FLAG_NO_BUFFERING                  0x20000000
+#define FILE_FLAG_RANDOM_ACCESS                 0x10000000
+#define FILE_FLAG_SEQUENTIAL_SCAN               0x08000000
+#define FILE_FLAG_DELETE_ON_CLOSE               0x04000000
+#define FILE_FLAG_BACKUP_SEMANTICS              0x02000000
+#define FILE_FLAG_POSIX_SEMANTICS               0x01000000
+#define FILE_FLAG_SESSION_AWARE                 0x00800000
 #define FILE_FLAG_OPEN_REPARSE_POINT            0x00200000
 #define FILE_FLAG_OPEN_NO_RECALL                0x00100000
-#define FILE_FLAG_FIRST_PIPE_INSTANCE            0x00080000
+#define FILE_FLAG_FIRST_PIPE_INSTANCE           0x00080000
 #define FILE_ATTRIBUTE_VALID_FLAGS              0x00007fb7
 #define FILE_ATTRIBUTE_VALID_SET_FLAGS          0x000031a7
 #define FILE_ATTRIBUTE_DIRECTORY                0x00000010
-#define FILE_READ_ATTRIBUTES                      0x0080
+#define FILE_READ_ATTRIBUTES                    0x0080
 
 #define OBJ_CASE_INSENSITIVE   0x00000040L
 
 
+
 static NTSTATUS(__stdcall* NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass) = NULL;
 
-NTSTATUS RtlDosPathNameToNtPathName_U(PCWSTR DosName, PUNICODE_STRING NtName, PWSTR* PartName, PRTL_RELATIVE_NAME_U RelativeName)
-{
-    static NTSTATUS(__stdcall * RtlpDosPathNameToRelativeNtPathName_Ustr)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR * FilePart, PRTL_RELATIVE_NAME_U RelativeName);
-    if (!RtlpDosPathNameToRelativeNtPathName_Ustr) RtlpDosPathNameToRelativeNtPathName_Ustr = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDosLongPathNameToNtPathName_U_WithStatus");
-    return RtlpDosPathNameToRelativeNtPathName_Ustr(DosName, NtName, PartName, RelativeName);
-}
 PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes)
 {
     static NTSTATUS(__stdcall * NtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength);
@@ -178,8 +161,7 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
     FlagsAndAttributes |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
 
     //TODO: Validate and translate from DOS Path to NT Path internally and don't use ntdll
-    RTL_RELATIVE_NAME_U relName;
-    if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName, &NtPathU, NULL, &relName)))
+    if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName, &NtPathU, NULL, NULL)))
     {
         SetLastError(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;
@@ -215,12 +197,8 @@ UINT64 File_GetSize(HANDLE hFile)
 
     NTSTATUS errCode = NtQueryInformationFile(hFile, &IoStatusBlock, &FileStandard, sizeof(FILE_STANDARD_INFORMATION), FileStandardInformation);
     SetLastNTError(errCode);
-    if (NT_ERROR(errCode))
-    {
-        return INVALID_FILE_SIZE;
-    }
 
-    return FileStandard.EndOfFile.QuadPart;
+    return NT_ERROR(errCode) ? INVALID_FILE_SIZE : FileStandard.EndOfFile.QuadPart;
 }
 BOOL File_Close(HANDLE hFile)
 {

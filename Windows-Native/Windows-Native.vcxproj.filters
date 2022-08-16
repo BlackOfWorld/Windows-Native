@@ -23,7 +23,7 @@
     <Filter Include="Memory">
       <UniqueIdentifier>{f628afbe-62e0-4802-9038-ea480761d1fa}</UniqueIdentifier>
     </Filter>
-    <Filter Include="System\File">
+    <Filter Include="System\Filesystem">
       <UniqueIdentifier>{eb855523-ef5e-431f-9363-9806bb7f537c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -47,11 +47,14 @@
     <ClInclude Include="Memory\Memory.h">
       <Filter>Memory</Filter>
     </ClInclude>
-    <ClInclude Include="System\File\File.h">
-      <Filter>System\File</Filter>
-    </ClInclude>
     <ClInclude Include="System\Process\CurrentProcess.h">
       <Filter>System\Process</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Filesystem\File.h">
+      <Filter>System\Filesystem</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Filesystem\Path.h">
+      <Filter>System\Filesystem</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -74,11 +77,14 @@
     <ClCompile Include="framework.c">
       <Filter>Header Files</Filter>
     </ClCompile>
-    <ClCompile Include="System\File\File.c">
-      <Filter>System\File</Filter>
-    </ClCompile>
     <ClCompile Include="System\Process\CurrentProcess.c">
       <Filter>System\Process</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Filesystem\File.c">
+      <Filter>System\Filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Filesystem\Path.c">
+      <Filter>System\Filesystem</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

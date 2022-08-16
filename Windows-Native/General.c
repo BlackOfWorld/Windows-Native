@@ -7,7 +7,7 @@
 #include "Native/API/Library.h"
 #include "System/Process/Process.h"
 #include "Memory/Memory.h"
-#include "System/File/File.h"
+#include "System/Filesystem/File.h"
 #include "System/Process/CurrentProcess.h"
 
 struct nativeLib NativeLib;

@@ -1,4 +1,5 @@
 #pragma once
+#define USE_ERRORS_FROM_NTDLL 1
 #if !(defined(_M_X64) || defined(_M_IX86) || defined(_M_ARM) || defined(_M_ARM64) || defined(_M_IA64) || defined(_M_ALPHA) || defined(_M_MIPS))
 #error "This architecture is currently unsupported"
 #endif
@@ -259,6 +260,7 @@ typedef DWORD NTSTATUS;
 #define DBG_EXCEPTION_HANDLED             ((DWORD)0x00010001L)
 #define DBG_CONTINUE                      ((DWORD)0x00010002L)
 #define ERROR_MR_MID_NOT_FOUND            ((DWORD)0x0000013DL)
+
 #define STATUS_SEGMENT_NOTIFICATION       ((DWORD)0x40000005L)
 #define STATUS_FATAL_APP_EXIT             ((DWORD)0x40000015L)
 #define DBG_REPLY_LATER                   ((DWORD)0x40010001L)
@@ -281,6 +283,8 @@ typedef DWORD NTSTATUS;
 #define STATUS_IN_PAGE_ERROR              ((DWORD)0xC0000006L)
 #define STATUS_INVALID_HANDLE             ((DWORD)0xC0000008L)
 #define STATUS_INVALID_PARAMETER          ((DWORD)0xC000000DL)
+#define STATUS_NO_SUCH_FILE               ((DWORD)0xC000000FL)
+#define STATUS_BUFFER_TOO_SMALL           ((DWORD)0xC0000023L)
 #define STATUS_INVALID_PAGE_PROTECTION    ((DWORD)0xC0000045L)
 #define STATUS_NO_MEMORY                  ((DWORD)0xC0000017L)
 #define STATUS_ILLEGAL_INSTRUCTION        ((DWORD)0xC000001DL)
@@ -454,6 +458,8 @@ typedef struct _CLIENT_ID
     VOID* UniqueThread;
 } CLIENT_ID, * PCLIENT_ID;
 
+#define UNICODE_STRING_MAX_BYTES ((WORD  ) 65534)
+#define UNICODE_STRING_MAX_CHARS (32767)
 typedef struct _UNICODE_STRING {
     unsigned short    Length;
     unsigned short    MaximumLength;
@@ -554,11 +560,30 @@ typedef struct _RTL_DRIVE_LETTER_CURDIR
     ULONG TimeStamp;
     STRING DosPath;
 } RTL_DRIVE_LETTER_CURDIR, * PRTL_DRIVE_LETTER_CURDIR;
+
 typedef struct _CURDIR
 {
     UNICODE_STRING DosPath;
     PVOID Handle;
 } CURDIR, * PCURDIR;
+typedef struct _ACL
+{
+    UCHAR AclRevision;                                                      //0x0
+    UCHAR Sbz1;                                                             //0x1
+    USHORT AclSize;                                                         //0x2
+    USHORT AceCount;                                                        //0x4
+    USHORT Sbz2;                                                            //0x6
+} ACL, * PACL;
+typedef struct _SECURITY_DESCRIPTOR
+{
+    UCHAR Revision;                                                         //0x0
+    UCHAR Sbz1;                                                             //0x1
+    USHORT Control;                                                         //0x2
+    VOID* Owner;                                                            //0x8
+    VOID* Group;                                                            //0x10
+    ACL* Sacl;                                                              //0x18
+    ACL* Dacl;                                                              //0x20
+} SECURITY_DESCRIPTOR, * PSECURITY_DESCRIPTOR;
 typedef struct _RTL_USER_PROCESS_PARAMETERS
 {
     ULONG MaximumLength;
@@ -590,7 +615,7 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS
     UNICODE_STRING RuntimeData;
     RTL_DRIVE_LETTER_CURDIR CurrentDirectores[32];
     ULONG EnvironmentSize;
-} RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
+} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
 typedef struct _PEB_FREE_BLOCK
 {
     struct _PEB_FREE_BLOCK* Next;
@@ -1021,7 +1046,7 @@ typedef struct _PEB
     PVOID WerRegistrationData;
     PVOID WerShipAssertPtr;
 } PEB, * PPEB;
-struct _NT_TIB
+typedef struct _NT_TIB
 {
     struct _EXCEPTION_REGISTRATION_RECORD* ExceptionList;                   //0x0
     VOID* StackBase;                                                        //0x8
@@ -1034,7 +1059,7 @@ struct _NT_TIB
     };
     VOID* ArbitraryUserPointer;                                             //0x28
     struct _NT_TIB* Self;                                                   //0x30
-};
+} NT_TIB, *PNT_TIB;
 typedef struct _FLOATING_SAVE_AREA {
     DWORD   ControlWord;
     DWORD   StatusWord;
@@ -1112,12 +1137,12 @@ typedef struct _PROCESSOR_NUMBER {
 //0x1838 bytes (sizeof)
 typedef struct _TEB
 {
-    struct _NT_TIB NtTib;                                                   //0x0
+    NT_TIB NtTib;                                                           //0x0
     VOID* EnvironmentPointer;                                               //0x38
     CLIENT_ID ClientId;                                                     //0x40
     VOID* ActiveRpcHandle;                                                  //0x50
     VOID* ThreadLocalStoragePointer;                                        //0x58
-    struct _PEB* ProcessEnvironmentBlock;                                   //0x60
+    PPEB ProcessEnvironmentBlock;                                           //0x60
     ULONG LastErrorValue;                                                   //0x68
     ULONG CountOfOwnedCriticalSections;                                     //0x6c
     VOID* CsrClientThread;                                                  //0x70
@@ -2450,6 +2475,7 @@ inline WCHAR* strcatW(WCHAR* dst, const WCHAR* src)
     return dst;
 }
 
+#if !USE_ERRORS_FROM_NTDLL
 typedef struct _RUN_ENTRY {
     ULONG BaseCode;
     USHORT RunLength;
@@ -2760,6 +2786,7 @@ static const USHORT RtlpStatusTable[] = {
     0x19f2, 0x19f3, 0x19f4, 0x19f5, 0x19f6, 0x0037, 0x0037,
     0x0037, 0x0000, 0x0 };
 #pragma endregion
+#endif
 #define NtCurrentProcess()   ((HANDLE)(LONG_PTR)-1)
 #define NtCurrentThread()    ((HANDLE)(LONG_PTR)-2)
 #define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
