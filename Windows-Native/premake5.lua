@@ -1,11 +1,12 @@
 project("LibWindowsNative")
-  targetname("Windows-Native") 
+  targetname("Windows-Native")
   kind("StaticLib")
   language("C")
   nativewchar("Off")
   exceptionhandling("Off")
   floatingpointexceptions("Off")
   intrinsics("on")
+  linkoptions {"/NODEFAULTLIB"}
   flags({
     "NoBufferSecurityCheck"
   })
