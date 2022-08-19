@@ -464,7 +464,7 @@ typedef struct _UNICODE_STRING {
     unsigned short    Length;
     unsigned short    MaximumLength;
     wchar_t* Buffer;
-} UNICODE_STRING, * PUNICODE_STRING;
+} UNICODE_STRING, *PUNICODE_STRING;
 
 typedef struct _ACTIVATION_CONTEXT
 {
@@ -2332,6 +2332,63 @@ inline int strcmpW(const wchar_t* a, const wchar_t* b)
     while (*a == *b++) if (*a++ == L'\0') return 0;
     return (*(const unsigned int*)a - *(const unsigned int*)--b);
 }
+
+#if 0
+inline size_t strlenA(const char* str)
+{
+    const char* char_ptr;
+    const unsigned long int* longword_ptr;
+    unsigned long int longword, himagic, lomagic;
+
+    for (char_ptr = str; ((unsigned long int) char_ptr
+        & (sizeof(longword) - 1)) != 0;
+        ++char_ptr)
+        if (*char_ptr == '\0')
+            return char_ptr - str;
+
+    longword_ptr = (unsigned long int*) char_ptr;
+
+    himagic = 0x80808080L;
+    lomagic = 0x01010101L;
+    if (sizeof(longword) > 4)
+    {
+        himagic = ((himagic << 16) << 16) | himagic;
+        lomagic = ((lomagic << 16) << 16) | lomagic;
+    }
+    if (sizeof(longword) > 8)
+        __fastfail(0);
+
+    for (;;)
+    {
+        longword = *longword_ptr++;
+
+        if (((longword - lomagic) & ~longword & himagic) != 0)
+        {
+            const char* cp = (const char*)(longword_ptr - 1);
+
+            if (cp[0] == 0)
+                return cp - str;
+            if (cp[1] == 0)
+                return cp - str + 1;
+            if (cp[2] == 0)
+                return cp - str + 2;
+            if (cp[3] == 0)
+                return cp - str + 3;
+            if (sizeof(longword) > 4)
+            {
+                if (cp[4] == 0)
+                    return cp - str + 4;
+                if (cp[5] == 0)
+                    return cp - str + 5;
+                if (cp[6] == 0)
+                    return cp - str + 6;
+                if (cp[7] == 0)
+                    return cp - str + 7;
+            }
+        }
+    }
+}
+#else
 inline size_t strlenA(const char* str)
 {
     size_t len = 0;
@@ -2339,6 +2396,7 @@ inline size_t strlenA(const char* str)
     while (str[i++]) ++len;
     return len;
 }
+#endif
 inline size_t strlenW(const wchar_t* str)
 {
     size_t len = 0;
@@ -2426,6 +2484,7 @@ inline size_t mbstowcs(wchar_t* wcstr, char const* mbstr, size_t count)
     }
     return size;
 }
+extern size_t __cdecl wcslen(wchar_t const* _String);
 #pragma function(memcpy)
 inline void* memcpy(void* dst, const void* src, size_t len)
 {

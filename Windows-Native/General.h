@@ -10,7 +10,7 @@ extern void NativeInit(void);
 struct Memory
 {
     PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
-    PVOID(*AllocateVirtual)(DWORD dwSize, DWORD AllocFlags, DWORD Protect);
+    PVOID(*AllocateVirtual)(size_t dwSize, DWORD AllocFlags, DWORD Protect);
     PVOID(*GetCurrentHeap)(void);
     DWORD(*GetCurrentHeaps)(void);
     BOOLEAN(*FreeHeap)(PVOID Address);
@@ -25,7 +25,7 @@ struct CurrentProcess
 
 struct Process
 {
-    BOOLEAN(*Create)(const WCHAR*, const WCHAR*);
+    PHANDLE(*Create)(const WCHAR*, const WCHAR*);
     DWORD(*Exists)(const WCHAR* processName);
     NTSTATUS(*Terminate)(HANDLE processHandle, NTSTATUS exitStatus);
     struct CurrentProcess CurrentProcess;

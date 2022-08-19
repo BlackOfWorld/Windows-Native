@@ -20,6 +20,7 @@ struct Path
     NTSTATUS(*RtlDosPathNameToNtPathName_U)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR* FilePart, PRTL_RELATIVE_NAME_U RelativeName);
     NTSTATUS(*RtlGetExePath)(PCWSTR name, PWSTR* path);
     DWORD(*SearchPathW)(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR* lpFilePart);
+    NTSTATUS(*RtlGetSearchPath)(PWCHAR* SearchPath);
 };
 
 extern struct Path Path;

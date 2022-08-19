@@ -1,4 +1,6 @@
 #include "File.h"
+
+#include "Path.h"
 #define INVALID_FILE_SIZE                0xFFFFFFFF
 #define ERROR_FILE_NOT_FOUND             2L
 #define ERROR_FILE_EXISTS                80L
@@ -161,7 +163,7 @@ PHANDLE File_Create(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
     FlagsAndAttributes |= SYNCHRONIZE | FILE_READ_ATTRIBUTES;
 
     //TODO: Validate and translate from DOS Path to NT Path internally and don't use ntdll
-    if (NT_ERROR(RtlDosPathNameToNtPathName_U(fileName, &NtPathU, NULL, NULL)))
+    if (NT_ERROR(Path.RtlDosPathNameToNtPathName_U(fileName, &NtPathU, NULL, NULL)))
     {
         SetLastError(ERROR_FILE_NOT_FOUND);
         return INVALID_HANDLE_VALUE;

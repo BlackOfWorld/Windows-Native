@@ -6,7 +6,7 @@
 
 #include "Native/API/Library.h"
 #include "System/Process/Process.h"
-#include "Memory/Memory.h"
+#include "System/Memory/Memory.h"
 #include "System/Filesystem/File.h"
 #include "System/Process/CurrentProcess.h"
 

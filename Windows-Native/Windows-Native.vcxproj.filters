@@ -20,11 +20,11 @@
     <Filter Include="Native\Library">
       <UniqueIdentifier>{a9143c57-e429-4d77-af5f-731df931bebd}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Memory">
-      <UniqueIdentifier>{f628afbe-62e0-4802-9038-ea480761d1fa}</UniqueIdentifier>
-    </Filter>
     <Filter Include="System\Filesystem">
       <UniqueIdentifier>{eb855523-ef5e-431f-9363-9806bb7f537c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="System\Memory">
+      <UniqueIdentifier>{75f899d1-f258-4c68-b69e-c207e3afa76d}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -44,9 +44,6 @@
     <ClInclude Include="Native\API\Loader.h">
       <Filter>Native\Library</Filter>
     </ClInclude>
-    <ClInclude Include="Memory\Memory.h">
-      <Filter>Memory</Filter>
-    </ClInclude>
     <ClInclude Include="System\Process\CurrentProcess.h">
       <Filter>System\Process</Filter>
     </ClInclude>
@@ -55,6 +52,9 @@
     </ClInclude>
     <ClInclude Include="System\Filesystem\Path.h">
       <Filter>System\Filesystem</Filter>
+    </ClInclude>
+    <ClInclude Include="System\Memory\Memory.h">
+      <Filter>System\Memory</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -71,9 +71,6 @@
     <ClCompile Include="Native\API\Loader.c">
       <Filter>Native\Library</Filter>
     </ClCompile>
-    <ClCompile Include="Memory\Memory.c">
-      <Filter>Memory</Filter>
-    </ClCompile>
     <ClCompile Include="framework.c">
       <Filter>Header Files</Filter>
     </ClCompile>
@@ -85,6 +82,9 @@
     </ClCompile>
     <ClCompile Include="System\Filesystem\Path.c">
       <Filter>System\Filesystem</Filter>
+    </ClCompile>
+    <ClCompile Include="System\Memory\Memory.c">
+      <Filter>System\Memory</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
