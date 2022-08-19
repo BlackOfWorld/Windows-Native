@@ -8,8 +8,8 @@
 #endif
 
 //THIS FUCKS UP THE STACK!!
-NTSTATUS NTAPI RtlDosSearchPath_Ustr(
-    ULONG Flags, 
+NTSTATUS RtlDosSearchPath_Ustr(
+    ULONG Flags,
     PUNICODE_STRING PathString,
     PUNICODE_STRING FileNameString,
     PUNICODE_STRING ExtensionString,
@@ -20,14 +20,14 @@ NTSTATUS NTAPI RtlDosSearchPath_Ustr(
     PSIZE_T LengthNeeded)
 {
     static NTSTATUS(NTAPI* RtlDosSearchPath_Ustr)(
-        ULONG, 
-        PUNICODE_STRING, 
+        ULONG,
         PUNICODE_STRING,
-        PUNICODE_STRING, 
-        PUNICODE_STRING, 
-        PUNICODE_STRING, 
-        PUNICODE_STRING *, 
-        PSIZE_T, 
+        PUNICODE_STRING,
+        PUNICODE_STRING,
+        PUNICODE_STRING,
+        PUNICODE_STRING,
+        PUNICODE_STRING *,
+        PSIZE_T,
         PSIZE_T) = NULL;
     if (!RtlDosSearchPath_Ustr) RtlDosSearchPath_Ustr = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDosSearchPath_Ustr");
 
@@ -170,9 +170,9 @@ DWORD SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD
     return Result;
 }
 struct Path Path = {
-    .RtlDosPathNameToNtPathName_U = RtlDosPathNameToNtPathName_U,
-    .RtlDosSearchPath_Ustr = RtlDosSearchPath_Ustr,
-    .RtlGetExePath = RtlGetExePath,
-    .SearchPathW = SearchPathW,
-    .RtlGetSearchPath = RtlGetSearchPath
+    .RtlDosPathNameToNtPathName_U = &RtlDosPathNameToNtPathName_U,
+    .RtlDosSearchPath_Ustr = &RtlDosSearchPath_Ustr,
+    .RtlGetExePath = &RtlGetExePath,
+    .SearchPathW = &SearchPathW,
+    .RtlGetSearchPath = &RtlGetSearchPath
 };

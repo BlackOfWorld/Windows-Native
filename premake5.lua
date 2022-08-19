@@ -2,13 +2,13 @@
 -- For licensing information see LICENSE at the root of this distribution.
 require("premake", ">=5.0-beta3")
 
-filter("configurations:32_*")
-  architecture("x86")
+filter "platforms:Win32"
+    architecture "x86"
 
-filter("configurations:64_*")
-  architecture("x86_64")
+filter "platforms:x64"
+    architecture "x86_64"
 
-filter("architecture:x86_64 or ARM64")
+filter("architecture:x86_64")
   targetsuffix("64")
 
 filter("language:C++")
@@ -23,11 +23,11 @@ workspace("Windows-Native")
   targetdir("./out/bin/%{cfg.platform}")
   libdirs("./out/bin/%{cfg.platform}")
 
+  platforms { "Win32", "x64" }
+
   configurations({
-    "32_Debug",
-    "32_Release",
-    "64_Debug",
-    "64_Release",
+    "Debug",
+    "Release",
   })
   startproject("Test")
 
@@ -37,5 +37,5 @@ workspace("Windows-Native")
 
   include("./Windows-Native")
   include("./Test")
-  
+
 
