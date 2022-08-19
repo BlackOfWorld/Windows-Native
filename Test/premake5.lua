@@ -1,0 +1,18 @@
+project("Test")
+  kind("ConsoleApp")
+  language("C++")
+  nativewchar("Off")
+  exceptionhandling("Off")
+  floatingpointexceptions("Off")
+  intrinsics("on")
+  nuget("gmock:1.11.0")
+  includedirs({
+    ".",
+  })
+  files({
+    "**.hint",
+    "**.cpp",
+    "**.h",
+    "packages.config"
+  })
+  links("LibWindowsNative")

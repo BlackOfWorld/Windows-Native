@@ -8,12 +8,32 @@
 #endif
 
 //THIS FUCKS UP THE STACK!!
-NTSTATUS RtlDosSearchPath_Ustr(ULONG Flags, PUNICODE_STRING PathString, PUNICODE_STRING FileNameString, PUNICODE_STRING ExtensionString, PUNICODE_STRING CallerBuffer, PUNICODE_STRING DynamicString, PUNICODE_STRING* FullNameOut, PSIZE_T FilePartSize, PSIZE_T LengthNeeded)
+NTSTATUS NTAPI RtlDosSearchPath_Ustr(
+    ULONG Flags, 
+    PUNICODE_STRING PathString,
+    PUNICODE_STRING FileNameString,
+    PUNICODE_STRING ExtensionString,
+    PUNICODE_STRING CallerBuffer,
+    PUNICODE_STRING DynamicString,
+    PUNICODE_STRING* FullNameOut,
+    PSIZE_T FilePartSize,
+    PSIZE_T LengthNeeded)
 {
-    static NTSTATUS(NTCALL* RtlDosSearchPath_Ustr)(ULONG Flags, PUNICODE_STRING PathString, PUNICODE_STRING FileNameString, PUNICODE_STRING ExtensionString, PUNICODE_STRING CallerBuffer, PUNICODE_STRING DynamicString, PUNICODE_STRING * FullNameOut, PSIZE_T FilePartSize, PSIZE_T LengthNeeded) = NULL;
+    static NTSTATUS(NTAPI* RtlDosSearchPath_Ustr)(
+        ULONG, 
+        PUNICODE_STRING, 
+        PUNICODE_STRING,
+        PUNICODE_STRING, 
+        PUNICODE_STRING, 
+        PUNICODE_STRING, 
+        PUNICODE_STRING *, 
+        PSIZE_T, 
+        PSIZE_T) = NULL;
     if (!RtlDosSearchPath_Ustr) RtlDosSearchPath_Ustr = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDosSearchPath_Ustr");
+
     return RtlDosSearchPath_Ustr(Flags, PathString, FileNameString, ExtensionString, CallerBuffer, DynamicString, FullNameOut, FilePartSize, LengthNeeded);
 }
+
 NTSTATUS RtlDosPathNameToNtPathName_U(PCWSTR DosName, PUNICODE_STRING NtName, PWSTR* PartName, PRTL_RELATIVE_NAME_U RelativeName)
 {
     static NTSTATUS(NTCALL* RtlpDosPathNameToRelativeNtPathName_Ustr)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR * FilePart, PRTL_RELATIVE_NAME_U RelativeName);
@@ -32,6 +52,7 @@ NTSTATUS RtlGetSearchPath(PWCHAR* SearchPath)
     if (!RtlGetSearchPath) RtlGetSearchPath = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlGetSearchPath");
     return RtlGetSearchPath(SearchPath);
 }
+
 DWORD SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR* lpFilePart)
 {
     UNICODE_STRING FileNameString, ExtensionString, PathString, CallerBuffer;
@@ -100,7 +121,8 @@ DWORD SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD
     }
 
     /* Call Rtl to do the work */
-    NTSTATUS status = RtlDosSearchPath_Ustr(Flags,
+    NTSTATUS status = RtlDosSearchPath_Ustr(
+        Flags,
         &PathString,
         &FileNameString,
         &ExtensionString,

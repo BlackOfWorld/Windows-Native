@@ -267,10 +267,13 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     if(!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParameters");
     HANDLE hProcess = NULL;
     HANDLE hThread = NULL;
-    WCHAR wImagePath[MAX_PATH * 2] = {0};
+    
+    WCHAR wImagePath[MAX_PATH] = {0};
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
     UNICODE_STRING ImagePath, CommandLine;
-    NTSTATUS status = Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath), wImagePath, NULL);
+    NTSTATUS status =
+        Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) * sizeof(WCHAR),
+                         wImagePath, NULL);
     status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImagePath, NULL, NULL);
     RtlInitUnicodeStringEx(&CommandLine, params);
     PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
@@ -341,6 +344,7 @@ NTSTATUS Process_Terminate(HANDLE processHandle, NTSTATUS exitStatus)
     if (!NtTerminateProcess) NtTerminateProcess = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtTerminateProcess");
     return NtTerminateProcess(processHandle, exitStatus);
 }
+
 struct Process Process = {
     .Create = &Process_Create,
     .Exists = &Process_Exists,
