@@ -259,6 +259,9 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #pragma endregion
 #if 1
 
+extern VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString,
+                                       const PUNICODE_STRING SourceString);
+
 PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 {
     static NTSTATUS(__stdcall * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessAccess, ACCESS_MASK ThreadAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
@@ -270,16 +273,31 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     
     WCHAR wImagePath[MAX_PATH] = {0};
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
-    UNICODE_STRING ImagePath, CommandLine;
+
     NTSTATUS status =
-        Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) * sizeof(WCHAR),
+        Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) / sizeof(WCHAR),
                          wImagePath, NULL);
+
+    UNICODE_STRING ImagePath = {0}, CommandLine = {0};
     status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImagePath, NULL, NULL);
+
     RtlInitUnicodeStringEx(&CommandLine, params);
     PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
-    UNICODE_STRING CurrentDir = NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
-    status = Path.RtlDosPathNameToNtPathName_U(CurrentDir.Buffer, &CurrentDir, NULL, NULL);
-    status = RtlCreateProcessParametersEx(&processParams, &ImagePath, NULL, &CurrentDir, NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
+
+    UNICODE_STRING path =
+        NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
+
+    /*
+    wchar_t wCurrentDir[MAX_PATH]= {0};
+    UNICODE_STRING CurrentDir = {.Buffer = &wCurrentDir, .Length = 0, .MaximumLength = 0};
+    RtlCopyUnicodeString(&CurrentDir, &NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath);*/
+
+    PUNICODE_STRING CurrentDir =
+        &NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
+        
+    status = Path.RtlDosPathNameToNtPathName_U(CurrentDir->Buffer, CurrentDir, NULL, NULL);
+    status = RtlCreateProcessParametersEx(&processParams, &ImagePath, NULL, CurrentDir, 
+        NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
 
     if (status)
         __debugbreak();

@@ -15,6 +15,9 @@ struct _CPUFeatures CPUFeatures;
 #define CPU_FEATURE_RDRAND     1 << 30
 #define CPU_FEATURE_Hypervisor 1 << 31
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+#define MAX(a, b) (((a) > (b)) ? (a) : (b))
+
 #if !defined(_WIN32) && !(defined(_M_IX86) || defined(_M_X64))
 void cpu_detect_features(void) {}
 #else
@@ -80,17 +83,43 @@ NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR Source
 {
     const size_t MaxSize = (USHRT_MAX & ~1) - sizeof(WCHAR);
 
-    DestinationString->Length = 0;
-    DestinationString->MaximumLength = 0;
-    DestinationString->Buffer = (PWCHAR)SourceString;
-    if (!SourceString) return STATUS_SUCCESS;
+    if (!SourceString) {
+      DestinationString->Length = 0;
+      DestinationString->MaximumLength = 0;
+      DestinationString->Buffer = NULL;
+      return STATUS_SUCCESS;
+    }
 
     const USHORT Size = (USHORT)strlenW(SourceString) * sizeof(WCHAR);
-    if (Size > MaxSize) return STATUS_NAME_TOO_LONG;
+    if (Size > MaxSize) 
+        return STATUS_NAME_TOO_LONG;
+
+    DestinationString->Buffer = (PWCHAR)SourceString;
     DestinationString->Length = (USHORT)Size;
-    DestinationString->MaximumLength = (USHORT)Size + sizeof(WCHAR);
+    DestinationString->MaximumLength = (USHORT)(Size + sizeof(WCHAR));
+
     return STATUS_SUCCESS;
 }
+
+VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString,
+                                const PUNICODE_STRING SourceString) {
+  ULONG SourceLength;
+
+  if (SourceString == NULL) {
+    DestinationString->Length = 0;
+  } else {
+    SourceLength = MIN(DestinationString->MaximumLength, SourceString->Length);
+    DestinationString->Length = (USHORT)SourceLength;
+
+   memcpy(DestinationString->Buffer, SourceString->Buffer,
+                  SourceLength);
+
+    if (DestinationString->Length < DestinationString->MaximumLength) {
+      DestinationString->Buffer[SourceLength / sizeof(WCHAR)] = L'\0';
+    }
+  }
+}
+
 static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
 #if USE_ERRORS_FROM_NTDLL

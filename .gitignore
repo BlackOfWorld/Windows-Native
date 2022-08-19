@@ -28,7 +28,7 @@
 *.lo
 
 # Shared objects (inc. Windows DLLs)
-*.dll
+
 *.so
 *.so.*
 *.dylib
@@ -474,4 +474,4 @@ FodyWeavers.xsd
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudio,c++,c
 
-!build/bin/win/*
+!build/bin/win/**

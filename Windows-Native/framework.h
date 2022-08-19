@@ -2397,12 +2397,19 @@ inline size_t strlenA(const char* str)
     return len;
 }
 #endif
-inline size_t strlenW(const wchar_t* str)
+inline size_t strlenW(const wchar_t* s)
 {
-    size_t len = 0;
-    size_t i = 0;
-    while (str[i++]) ++len;
-    return len;
+  size_t len = 0;
+  while (s[len] != L'\0') {
+    if (s[++len] == L'\0')
+      return len;
+    if (s[++len] == L'\0')
+      return len;
+    if (s[++len] == L'\0')
+      return len;
+    ++len;
+  }
+  return len;
 }
 inline const char* strchrA(const char* str, const char ch)
 {
