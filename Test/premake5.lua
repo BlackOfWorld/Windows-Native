@@ -9,6 +9,10 @@ project("Test")
   includedirs({
     ".",
   })
+  vpaths {
+    ["Tests"] = {"Tests/**.cpp", "Tests/**.h" },
+    [""] = { "*.cpp", "*.h", "packages.config" }
+  }
   files({
     "**.hint",
     "**.cpp",
