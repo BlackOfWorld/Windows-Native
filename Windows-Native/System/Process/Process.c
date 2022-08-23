@@ -1,4 +1,4 @@
-﻿#include <framework.h>
+#include <framework.h>
 #include "Process.h"
 #include "System/Filesystem/File.h"
 #include "System/Filesystem/Path.h"
@@ -259,34 +259,44 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #pragma endregion
 #if 1
 
-extern VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString, const PUNICODE_STRING SourceString);
+#ifdef _WIN64
+#define callc __fastcall
+#else
+#define callc __stdcall
+#endif
+
 PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 {
-    static NTSTATUS(__stdcall * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessDesiredAccess, ACCESS_MASK ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
+    static NTSTATUS(callc * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessDesiredAccess, ACCESS_MASK ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
     if (!NtCreateUserProcess) NtCreateUserProcess = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtCreateUserProcess");
-    static NTSTATUS(__stdcall * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS * pProcessParameters,PUNICODE_STRING ImagePathName,PUNICODE_STRING DllPath,PUNICODE_STRING CurrentDirectory,PUNICODE_STRING CommandLine,PVOID Environment,PUNICODE_STRING WindowTitle,PUNICODE_STRING DesktopInfo,PUNICODE_STRING ShellInfo,PUNICODE_STRING RuntimeData,ULONG Flags) = NULL;
+    static NTSTATUS(callc * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS * pProcessParameters,PUNICODE_STRING ImagePathName,PUNICODE_STRING DllPath,PUNICODE_STRING CurrentDirectory,PUNICODE_STRING CommandLine,PVOID Environment,PUNICODE_STRING WindowTitle,PUNICODE_STRING DesktopInfo,PUNICODE_STRING ShellInfo,PUNICODE_STRING RuntimeData,ULONG Flags) = NULL;
     if(!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParametersEx");
+    static NTSTATUS(callc * RtlDestroyProcessParameters)(PRTL_USER_PROCESS_PARAMETERS ProcessParameters);
+    if (!RtlDestroyProcessParameters) RtlDestroyProcessParameters = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDestroyProcessParameters");
+
+    UNICODE_STRING ImagePath = { 0 }, CommandLine = { 0 };
     HANDLE hProcess = INVALID_HANDLE_VALUE;
     HANDLE hThread = INVALID_HANDLE_VALUE;
-
     WCHAR wImagePath[MAX_PATH] = {0};
+    PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
+    WCHAR wParams[MAX_PATH] = { 0 };
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
 
-    NTSTATUS status =
+    DWORD wImagePathLength =
         Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) / sizeof(WCHAR),
                          wImagePath, NULL);
 
-    UNICODE_STRING ImagePath = {0}, CommandLine = {0};
-    status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImagePath, NULL, NULL);
 
-    RtlInitUnicodeStringEx(&CommandLine, params);
-    PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
+    NTSTATUS status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImagePath, NULL, NULL);
 
-    /*
-    wchar_t wCurrentDir[MAX_PATH]= {0};
-    UNICODE_STRING CurrentDir = {.Buffer = &wCurrentDir, .Length = 0, .MaximumLength = 0};
-    RtlCopyUnicodeString(&CurrentDir, &NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath);*/
-
+    wstrcpy(wParams, L"\"");
+    wstrcpy(wParams + 1, wImagePath);
+    wstrcpy(wParams + 1 + wImagePathLength, L"\"");
+    if (params && params[0]) {
+        wParams[wImagePathLength + 2] = L' ';
+        wstrcpy(wParams + 3 + wImagePathLength, params);
+    }
+    RtlInitUnicodeStringEx(&CommandLine, wParams);
     PUNICODE_STRING CurrentDir =
         &NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
 
@@ -310,6 +320,8 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     if (status)
         __debugbreak();
     SetLastNTError(status);
+    if(attributeList) NativeLib.Memory.FreeHeap(attributeList);
+    if(processParams) RtlDestroyProcessParameters(processParams);
     return hProcess;
 }
 #endif

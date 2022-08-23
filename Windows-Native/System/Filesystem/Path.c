@@ -133,18 +133,6 @@ DWORD SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD
         &LengthNeeded);
     if (NT_ERROR(status))
     {
-        /* Check for unusual status codes */
-        if (status != STATUS_NO_SUCH_FILE && status != STATUS_BUFFER_TOO_SMALL)
-        {
-            __debugbreak();
-            ///* Print them out since maybe an app needs fixing */
-            //DbgPrint("%s on file %wZ failed; NTSTATUS = %08lx\n",
-            //    __FUNCTION__,
-            //    &FileNameString,
-            //    Status);
-            //DbgPrint("    Path = %wZ\n", &PathString);
-        }
-
         /* Check if the failure was due to a small buffer */
         if (status == STATUS_BUFFER_TOO_SMALL)
         {
