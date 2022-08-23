@@ -25,7 +25,6 @@ PVOID HandleForwardedFunction(PVOID hModule, ULONG_PTR pFuncAddr)
     wchar_t libW[MAX_PATH] = { 0 };
     char funcA[MAX_PATH] = { 0 };
     char* dot = (char*)strchrA(strAddr, '.');
-    if (dot == 0) __debugbreak();
     size_t dotI = dot - strAddr;
     memcpy(libA, strAddr, dotI);
     memcpy(funcA, ++dot, strlenA(dot));

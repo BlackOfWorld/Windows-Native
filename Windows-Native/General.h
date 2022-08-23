@@ -41,8 +41,8 @@ struct Library
 };
 struct File
 {
-    PHANDLE(*Create)(PWCHAR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
-    INT64(*Size)(HANDLE hFile);
+    HANDLE(*Create)(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
+    UINT64(*Size)(HANDLE hFile);
     BOOL(*Close)(HANDLE hFile);
 };
 struct nativeLib

@@ -464,7 +464,7 @@ typedef struct _UNICODE_STRING {
     unsigned short    Length;
     unsigned short    MaximumLength;
     wchar_t* Buffer;
-} UNICODE_STRING, *PUNICODE_STRING;
+} UNICODE_STRING, * PUNICODE_STRING;
 
 typedef struct _ACTIVATION_CONTEXT
 {
@@ -615,7 +615,7 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS
     UNICODE_STRING RuntimeData;
     RTL_DRIVE_LETTER_CURDIR CurrentDirectores[32];
     ULONG EnvironmentSize;
-} RTL_USER_PROCESS_PARAMETERS, *PRTL_USER_PROCESS_PARAMETERS;
+} RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
 typedef struct _PEB_FREE_BLOCK
 {
     struct _PEB_FREE_BLOCK* Next;
@@ -1059,7 +1059,7 @@ typedef struct _NT_TIB
     };
     VOID* ArbitraryUserPointer;                                             //0x28
     struct _NT_TIB* Self;                                                   //0x30
-} NT_TIB, *PNT_TIB;
+} NT_TIB, * PNT_TIB;
 typedef struct _FLOATING_SAVE_AREA {
     DWORD   ControlWord;
     DWORD   StatusWord;
@@ -2393,23 +2393,16 @@ inline size_t strlenA(const char* str)
 {
     size_t len = 0;
     size_t i = 0;
-    while (str[i++]) ++len;
+    while (str[i++] != '\0') ++len;
     return len;
 }
 #endif
-inline size_t strlenW(const wchar_t* s)
+inline size_t strlenW(const wchar_t* str)
 {
-  size_t len = 0;
-  while (s[len] != L'\0') {
-    if (s[++len] == L'\0')
-      return len;
-    if (s[++len] == L'\0')
-      return len;
-    if (s[++len] == L'\0')
-      return len;
-    ++len;
-  }
-  return len;
+    size_t len = 0;
+    size_t i = 0;
+    while (str[i++] != L'\0') ++len;
+    return len;
 }
 inline const char* strchrA(const char* str, const char ch)
 {
@@ -2496,7 +2489,7 @@ extern size_t __cdecl wcslen(wchar_t const* _String);
 inline void* memcpy(void* dst, const void* src, size_t len)
 {
     if (CPUFeatures.cpu_FSRM)
-        __movsb((unsigned char*)dst, (unsigned char*)src, len);
+        __movsb(dst, (unsigned char*)src, len);
     else
         for (size_t i = 0; i < len; ((char*)dst)[i] = ((char*)src)[i], i++);
     return dst;

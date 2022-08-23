@@ -259,18 +259,16 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #pragma endregion
 #if 1
 
-extern VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString,
-                                       const PUNICODE_STRING SourceString);
-
+extern VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString, const PUNICODE_STRING SourceString);
 PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 {
-    static NTSTATUS(__stdcall * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessAccess, ACCESS_MASK ThreadAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
+    static NTSTATUS(__stdcall * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessDesiredAccess, ACCESS_MASK ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
     if (!NtCreateUserProcess) NtCreateUserProcess = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtCreateUserProcess");
-    static NTSTATUS(__stdcall * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS* pProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, DWORD Flags) = NULL;
-    if(!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParameters");
-    HANDLE hProcess = NULL;
-    HANDLE hThread = NULL;
-    
+    static NTSTATUS(__stdcall * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS * pProcessParameters,PUNICODE_STRING ImagePathName,PUNICODE_STRING DllPath,PUNICODE_STRING CurrentDirectory,PUNICODE_STRING CommandLine,PVOID Environment,PUNICODE_STRING WindowTitle,PUNICODE_STRING DesktopInfo,PUNICODE_STRING ShellInfo,PUNICODE_STRING RuntimeData,ULONG Flags) = NULL;
+    if(!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParametersEx");
+    HANDLE hProcess = INVALID_HANDLE_VALUE;
+    HANDLE hThread = INVALID_HANDLE_VALUE;
+
     WCHAR wImagePath[MAX_PATH] = {0};
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
 
@@ -284,9 +282,6 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     RtlInitUnicodeStringEx(&CommandLine, params);
     PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
 
-    UNICODE_STRING path =
-        NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
-
     /*
     wchar_t wCurrentDir[MAX_PATH]= {0};
     UNICODE_STRING CurrentDir = {.Buffer = &wCurrentDir, .Length = 0, .MaximumLength = 0};
@@ -294,10 +289,9 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 
     PUNICODE_STRING CurrentDir =
         &NtGetPeb()->ProcessParameters->CurrentDirectory.DosPath;
-        
-    status = Path.RtlDosPathNameToNtPathName_U(CurrentDir->Buffer, CurrentDir, NULL, NULL);
-    status = RtlCreateProcessParametersEx(&processParams, &ImagePath, NULL, CurrentDir, 
-        NULL, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
+
+    status = RtlCreateProcessParametersEx(&processParams, &ImagePath, NULL, CurrentDir,
+        &CommandLine, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
 
     if (status)
         __debugbreak();
@@ -306,6 +300,7 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     createInfo.State = PsCreateInitialState;
 
     PPS_ATTRIBUTE_LIST attributeList = NativeLib.Memory.AllocateHeap(sizeof(PS_ATTRIBUTE), true);
+
     attributeList->TotalLength = sizeof(PS_ATTRIBUTE_LIST);
     attributeList->Attributes[0].Attribute = PS_ATTRIBUTE_IMAGE_NAME;
     attributeList->Attributes[0].Size = ImagePath.Length;
@@ -315,7 +310,7 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     if (status)
         __debugbreak();
     SetLastNTError(status);
-    return false;
+    return hProcess;
 }
 #endif
 

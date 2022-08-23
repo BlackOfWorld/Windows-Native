@@ -2,7 +2,10 @@
 
 TEST(File, Create)
 {
-    EXPECT_NE(NativeLib.File.Create((wchar_t*)L"TestFile.txt", FILE_GENERIC_WRITE, FILE_SHARE_WRITE, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL), INVALID_HANDLE_VALUE);
+    EXPECT_EQ(NativeLib.File.Create(L"\0", 0, 0, 0, 0), INVALID_HANDLE_VALUE);
+    HANDLE hFile = NativeLib.File.Create(L"TestFile.txt", FILE_GENERIC_WRITE, FILE_SHARE_WRITE, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL);
+    EXPECT_NE(hFile, INVALID_HANDLE_VALUE);
+    EXPECT_EQ(NativeLib.File.Close(hFile), true);
 }
 
 TEST(File, Size)

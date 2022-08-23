@@ -91,7 +91,7 @@ NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR Source
     }
 
     const USHORT Size = (USHORT)strlenW(SourceString) * sizeof(WCHAR);
-    if (Size > MaxSize) 
+    if (Size > MaxSize)
         return STATUS_NAME_TOO_LONG;
 
     DestinationString->Buffer = (PWCHAR)SourceString;
@@ -164,11 +164,11 @@ static ULONG RtlNtStatusToDosError(NTSTATUS status)
     return ERROR_MR_MID_NOT_FOUND;
 #endif
 }
-void SetLastNTStatusInternal(ULONG err, bool Error)
+void SetLastNTStatusInternal(ULONG err, bool isNt)
 {
     PTEB teb = NtGetTeb();
     teb->LastStatusValue = err;
-    if(Error) teb->LastErrorValue = RtlNtStatusToDosError(err);
+    if(isNt) teb->LastErrorValue = RtlNtStatusToDosError(err);
 }
 inline void SetLastNTStatus(ULONG err)
 {
