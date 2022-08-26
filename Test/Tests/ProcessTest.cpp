@@ -4,7 +4,9 @@ TEST(Process, Create)
 {
     //SKIP_TEST("Not yet implemented");
     EXPECT_TRUE(NativeLib.Process.Create) << ERROR_MSG("Create function does not exist!");
-    EXPECT_NE(NativeLib.Process.Create(L"cmd.exe", L"/k echo Hello!"), INVALID_HANDLE_VALUE);
+    HANDLE hProcess = NativeLib.Process.Create(L"cmd.exe", L"/k echo Hello!");
+    EXPECT_NE(hProcess, INVALID_HANDLE_VALUE);
+    EXPECT_EQ(NativeLib.Process.Terminate(hProcess, 0), 0);
 }
 
 TEST(Process, Exists)
