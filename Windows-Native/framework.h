@@ -584,22 +584,27 @@ typedef struct _SECURITY_DESCRIPTOR
     ACL* Sacl;                                                              //0x18
     ACL* Dacl;                                                              //0x20
 } SECURITY_DESCRIPTOR, * PSECURITY_DESCRIPTOR;
+#define RTL_MAX_DRIVE_LETTERS 32
 typedef struct _RTL_USER_PROCESS_PARAMETERS
 {
     ULONG MaximumLength;
     ULONG Length;
+
     ULONG Flags;
     ULONG DebugFlags;
-    PVOID ConsoleHandle;
+
+    HANDLE ConsoleHandle;
     ULONG ConsoleFlags;
-    PVOID StandardInput;
-    PVOID StandardOutput;
-    PVOID StandardError;
+    HANDLE StandardInput;
+    HANDLE StandardOutput;
+    HANDLE StandardError;
+
     CURDIR CurrentDirectory;
     UNICODE_STRING DllPath;
     UNICODE_STRING ImagePathName;
     UNICODE_STRING CommandLine;
-    PVOID Environment;
+    PWCHAR Environment;
+
     ULONG StartingX;
     ULONG StartingY;
     ULONG CountX;
@@ -607,14 +612,20 @@ typedef struct _RTL_USER_PROCESS_PARAMETERS
     ULONG CountCharsX;
     ULONG CountCharsY;
     ULONG FillAttribute;
+
     ULONG WindowFlags;
     ULONG ShowWindowFlags;
     UNICODE_STRING WindowTitle;
     UNICODE_STRING DesktopInfo;
     UNICODE_STRING ShellInfo;
     UNICODE_STRING RuntimeData;
-    RTL_DRIVE_LETTER_CURDIR CurrentDirectores[32];
-    ULONG EnvironmentSize;
+    RTL_DRIVE_LETTER_CURDIR CurrentDirectories[RTL_MAX_DRIVE_LETTERS];
+
+    ULONG_PTR EnvironmentSize;
+    ULONG_PTR EnvironmentVersion;
+    PVOID PackageDependencyData;
+    ULONG ProcessGroupId;
+    ULONG LoaderThreads;
 } RTL_USER_PROCESS_PARAMETERS, * PRTL_USER_PROCESS_PARAMETERS;
 typedef struct _PEB_FREE_BLOCK
 {

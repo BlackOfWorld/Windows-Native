@@ -1,5 +1,6 @@
 #include <framework.h>
 #include "Process.h"
+
 #include "System/Filesystem/File.h"
 #include "System/Filesystem/Path.h"
 
@@ -16,8 +17,14 @@
     ((Thread) ? PS_ATTRIBUTE_THREAD : 0) | \
     ((Input) ? PS_ATTRIBUTE_INPUT : 0) | \
     ((Additive) ? PS_ATTRIBUTE_ADDITIVE : 0))
+#define PS_ATTRIBUTE_CLIENT_ID \
+    PsAttributeValue(PsAttributeClientId, TRUE, FALSE, FALSE)
 #define PS_ATTRIBUTE_IMAGE_NAME \
     PsAttributeValue(PsAttributeImageName, FALSE, TRUE, FALSE)
+#define PS_ATTRIBUTE_IMAGE_INFO \
+    PsAttributeValue(PsAttributeImageInfo, FALSE, FALSE, FALSE)
+#define PS_ATTRIBUTE_STD_HANDLE_INFO \
+    PsAttributeValue(PsAttributeStdHandleInfo, FALSE, TRUE, FALSE)
 #define PROCESS_TERMINATE                  (0x0001)
 #define PROCESS_CREATE_THREAD              (0x0002)
 #define PROCESS_SET_SESSIONID              (0x0004)
@@ -147,7 +154,7 @@ typedef struct _PS_ATTRIBUTE
 typedef struct _PS_ATTRIBUTE_LIST
 {
     SIZE_T TotalLength;
-    PS_ATTRIBUTE Attributes[1];
+    PS_ATTRIBUTE Attributes[4];
 } PS_ATTRIBUTE_LIST, * PPS_ATTRIBUTE_LIST;
 typedef enum _PS_CREATE_STATE
 {
@@ -235,20 +242,66 @@ typedef struct _PS_CREATE_INFO
     };
 } PS_CREATE_INFO, * PPS_CREATE_INFO;
 
-typedef struct _SECTION_IMAGE_INFORMATION {
-    PVOID EntryPoint;
-    ULONG StackZeroBits;
-    ULONG StackReserved;
-    ULONG StackCommit;
-    ULONG ImageSubsystem;
-    WORD SubSystemVersionLow;
-    WORD SubSystemVersionHigh;
-    ULONG Unknown1;
-    ULONG ImageCharacteristics;
-    ULONG ImageMachineType;
-    ULONG Unknown2[3];
+typedef struct _SECTION_IMAGE_INFORMATION
+{
+    PVOID TransferAddress; // Entry point
+    ULONG ZeroBits;
+    SIZE_T MaximumStackSize;
+    SIZE_T CommittedStackSize;
+    ULONG SubSystemType;
+    union
+    {
+        struct
+        {
+            USHORT SubSystemMinorVersion;
+            USHORT SubSystemMajorVersion;
+        } s1;
+        ULONG SubSystemVersion;
+    } u1;
+    union
+    {
+        struct
+        {
+            USHORT MajorOperatingSystemVersion;
+            USHORT MinorOperatingSystemVersion;
+        } s2;
+        ULONG OperatingSystemVersion;
+    } u2;
+    USHORT ImageCharacteristics;
+    USHORT DllCharacteristics;
+    USHORT Machine;
+    BOOLEAN ImageContainsCode;
+    union
+    {
+        UCHAR ImageFlags;
+        struct
+        {
+            UCHAR ComPlusNativeReady : 1;
+            UCHAR ComPlusILOnly : 1;
+            UCHAR ImageDynamicallyRelocated : 1;
+            UCHAR ImageMappedFlat : 1;
+            UCHAR BaseBelow4gb : 1;
+            UCHAR ComPlusPrefer32bit : 1;
+            UCHAR Reserved : 2;
+        } s3;
+    } u3;
+    ULONG LoaderFlags;
+    ULONG ImageFileSize;
+    ULONG CheckSum;
 } SECTION_IMAGE_INFORMATION, * PSECTION_IMAGE_INFORMATION;
-
+typedef struct _PS_STD_HANDLE_INFO
+{
+    union
+    {
+        ULONG Flags;
+        struct
+        {
+            ULONG StdHandleState : 2;
+            ULONG PseudoHandleMask : 3;
+        };
+    };
+    ULONG StdHandleSubsystemType;
+} PS_STD_HANDLE_INFO, * PPS_STD_HANDLE_INFO;
 typedef struct _RTL_USER_PROCESS_INFORMATION {
     ULONG Size;
     HANDLE Process;
@@ -258,36 +311,34 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 } RTL_USER_PROCESS_INFORMATION, * PRTL_USER_PROCESS_INFORMATION;
 #pragma endregion
 #if 1
-
 #ifdef _WIN64
 #define callc __fastcall
 #else
 #define callc __stdcall
 #endif
 
+
 PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 {
     static NTSTATUS(callc * NtCreateUserProcess)(PHANDLE ProcessHandle, PHANDLE ThreadHandle, ACCESS_MASK ProcessDesiredAccess, ACCESS_MASK ThreadDesiredAccess, POBJECT_ATTRIBUTES ProcessObjectAttributes, POBJECT_ATTRIBUTES ThreadObjectAttributes, ULONG ProcessFlags, ULONG ThreadFlags, PRTL_USER_PROCESS_PARAMETERS ProcessParameters, PPS_CREATE_INFO CreateInfo, PPS_ATTRIBUTE_LIST AttributeList) = NULL;
     if (!NtCreateUserProcess) NtCreateUserProcess = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtCreateUserProcess");
-    static NTSTATUS(callc * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS * pProcessParameters,PUNICODE_STRING ImagePathName,PUNICODE_STRING DllPath,PUNICODE_STRING CurrentDirectory,PUNICODE_STRING CommandLine,PVOID Environment,PUNICODE_STRING WindowTitle,PUNICODE_STRING DesktopInfo,PUNICODE_STRING ShellInfo,PUNICODE_STRING RuntimeData,ULONG Flags) = NULL;
-    if(!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParametersEx");
+    static NTSTATUS(callc * RtlCreateProcessParametersEx)(PRTL_USER_PROCESS_PARAMETERS * pProcessParameters, PUNICODE_STRING ImagePathName, PUNICODE_STRING DllPath, PUNICODE_STRING CurrentDirectory, PUNICODE_STRING CommandLine, PVOID Environment, PUNICODE_STRING WindowTitle, PUNICODE_STRING DesktopInfo, PUNICODE_STRING ShellInfo, PUNICODE_STRING RuntimeData, ULONG Flags) = NULL;
+    if (!RtlCreateProcessParametersEx) RtlCreateProcessParametersEx = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlCreateProcessParametersEx");
     static NTSTATUS(callc * RtlDestroyProcessParameters)(PRTL_USER_PROCESS_PARAMETERS ProcessParameters);
     if (!RtlDestroyProcessParameters) RtlDestroyProcessParameters = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDestroyProcessParameters");
 
-    UNICODE_STRING ImagePath = { 0 }, CommandLine = { 0 };
-    HANDLE hProcess = INVALID_HANDLE_VALUE;
-    HANDLE hThread = INVALID_HANDLE_VALUE;
-    WCHAR wImagePath[MAX_PATH] = {0};
+    UNICODE_STRING ImageName = { 0 }, CommandLine = { 0 }, ImagePath = { 0 };
+    HANDLE hProcess = NULL, hThread = NULL;
+    WCHAR wImagePath[MAX_PATH] = { 0 }, wParams[MAX_PATH] = { 0 };
     PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
-    WCHAR wParams[MAX_PATH] = { 0 };
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
-
+    OBJECT_ATTRIBUTES objAttr = { sizeof(OBJECT_ATTRIBUTES) };
     DWORD wImagePathLength =
         Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) / sizeof(WCHAR),
-                         wImagePath, NULL);
+            wImagePath, NULL);
 
-
-    NTSTATUS status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImagePath, NULL, NULL);
+    RtlInitUnicodeStringEx(&ImagePath, wImagePath);
+    NTSTATUS status = Path.RtlDosPathNameToNtPathName_U(wImagePath, &ImageName, NULL, NULL);
 
     wstrcpy(wParams, L"\"");
     wstrcpy(wParams + 1, wImagePath);
@@ -302,26 +353,44 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 
     status = RtlCreateProcessParametersEx(&processParams, &ImagePath, NULL, CurrentDir,
         &CommandLine, NULL, NULL, NULL, NULL, NULL, RTL_USER_PROCESS_PARAMETERS_NORMALIZED);
-
-    if (status)
-        __debugbreak();
-    PS_CREATE_INFO createInfo;
-    createInfo.Size = sizeof(createInfo);
+    if(NT_ERROR(status))
+    {
+        SetLastNTError(status);
+        return INVALID_HANDLE_VALUE;
+    }
+    PS_CREATE_INFO createInfo = {sizeof(createInfo) };
     createInfo.State = PsCreateInitialState;
-
-    PPS_ATTRIBUTE_LIST attributeList = NativeLib.Memory.AllocateHeap(sizeof(PS_ATTRIBUTE), true);
+    createInfo.InitState.InitFlags = 1;
+    PPS_STD_HANDLE_INFO stdHandleInfo = NativeLib.Memory.AllocateHeap(sizeof(PS_STD_HANDLE_INFO), true);
+    PCLIENT_ID clientId = NativeLib.Memory.AllocateHeap(sizeof(PS_ATTRIBUTE), true);
+    PSECTION_IMAGE_INFORMATION SecImgInfo = NativeLib.Memory.AllocateHeap(sizeof(SECTION_IMAGE_INFORMATION), true);
+    PPS_ATTRIBUTE_LIST attributeList = NativeLib.Memory.AllocateHeap(sizeof(PS_ATTRIBUTE_LIST), true);
 
     attributeList->TotalLength = sizeof(PS_ATTRIBUTE_LIST);
-    attributeList->Attributes[0].Attribute = PS_ATTRIBUTE_IMAGE_NAME;
-    attributeList->Attributes[0].Size = ImagePath.Length;
-    attributeList->Attributes[0].Value = (ULONG_PTR)ImagePath.Buffer;
+    attributeList->Attributes[0].Attribute = PS_ATTRIBUTE_CLIENT_ID;
+    attributeList->Attributes[0].Size = sizeof(CLIENT_ID);
+    attributeList->Attributes[0].ValuePtr = clientId;
 
-    status = NtCreateUserProcess(&hProcess, &hThread, PROCESS_ALL_ACCESS, THREAD_ALL_ACCESS, NULL, NULL, 0, 0, processParams, &createInfo, attributeList);
-    if (status)
-        __debugbreak();
+    attributeList->Attributes[1].Attribute = PS_ATTRIBUTE_IMAGE_INFO;
+    attributeList->Attributes[1].Size = sizeof(SECTION_IMAGE_INFORMATION);
+    attributeList->Attributes[1].ValuePtr = SecImgInfo;
+
+    attributeList->Attributes[2].Attribute = PS_ATTRIBUTE_IMAGE_NAME;
+    attributeList->Attributes[2].Size = ImageName.Length;
+    attributeList->Attributes[2].ValuePtr = ImageName.Buffer;
+
+    attributeList->Attributes[3].Attribute = PS_ATTRIBUTE_STD_HANDLE_INFO;
+    attributeList->Attributes[3].Size = sizeof(PS_STD_HANDLE_INFO);
+    attributeList->Attributes[3].ValuePtr = stdHandleInfo;
+
+    status = NtCreateUserProcess(&hProcess, &hThread, MAXIMUM_ALLOWED, MAXIMUM_ALLOWED, &objAttr, &objAttr, 0, 0, processParams, &createInfo, attributeList);
+
     SetLastNTError(status);
-    if(attributeList) NativeLib.Memory.FreeHeap(attributeList);
-    if(processParams) RtlDestroyProcessParameters(processParams);
+    if (SecImgInfo) NativeLib.Memory.FreeHeap(SecImgInfo);
+    if (clientId) NativeLib.Memory.FreeHeap(clientId);
+    if (stdHandleInfo) NativeLib.Memory.FreeHeap(stdHandleInfo);
+    if (attributeList) NativeLib.Memory.FreeHeap(attributeList);
+    if (processParams) RtlDestroyProcessParameters(processParams);
     return hProcess;
 }
 #endif
@@ -367,7 +436,9 @@ NTSTATUS Process_Terminate(HANDLE processHandle, NTSTATUS exitStatus)
 {
     static NTSTATUS(NTAPI * NtTerminateProcess)(HANDLE ProcessHandle, NTSTATUS ExitStatus) = NULL;
     if (!NtTerminateProcess) NtTerminateProcess = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtTerminateProcess");
-    return NtTerminateProcess(processHandle, exitStatus);
+    NTSTATUS status = NtTerminateProcess(processHandle, exitStatus);
+    SetLastNTError(status);
+    return status;
 }
 
 struct Process Process = {
