@@ -36,6 +36,6 @@ UINT64 CurrentProcess_GetId(void)
 }
 
 struct CurrentProcess CurrentProcess = {
-    .GetCurrentId = CurrentProcess_GetId,
-    .DetectDebugger = CurrentProcess_DetectDebugger
+    .GetCurrentId = &CurrentProcess_GetId,
+    .DetectDebugger = &CurrentProcess_DetectDebugger
 };

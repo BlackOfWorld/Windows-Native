@@ -433,7 +433,7 @@ DWORD Process_FindByName(const WCHAR* processName)
 }
 #define IS_ATOM(x) (((ULONG_PTR)(x) > 0x0) && ((ULONG_PTR)(x) < 0x10000))
 #define QUERY_WINDOW_UNIQUE_PROCESS_ID 0
-HWND Process_FindByWindow(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter)
+DWORD Process_FindByWindow(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter)
 {
     // TODO: This needs to load win32u.dll
     static HWND(NTAPI* NtUserFindWindowEx)(PVOID hwndParent, PVOID hwndChild, PUNICODE_STRING ClassName, PUNICODE_STRING WindowName, ULONG Type) = NULL;
