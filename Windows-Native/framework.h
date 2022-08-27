@@ -197,6 +197,7 @@ typedef void* POINTER_32 PVOID32;
 typedef void* POINTER_64 PVOID64;
 typedef void* LPVOID;
 typedef void* HANDLE;
+typedef HANDLE HWND;
 typedef HANDLE* PHANDLE;
 typedef HANDLE HINSTANCE;
 typedef HINSTANCE HMODULE;

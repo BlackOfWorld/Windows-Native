@@ -395,7 +395,7 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 }
 #endif
 
-DWORD Process_Exists(const WCHAR* processName)
+DWORD Process_FindByName(const WCHAR* processName)
 {
     static NTSTATUS(__stdcall * NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength) = NULL;
     if (!NtQuerySystemInformation) NtQuerySystemInformation = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQuerySystemInformation");
@@ -431,6 +431,45 @@ DWORD Process_Exists(const WCHAR* processName)
     NativeLib.Memory.FreeHeap(buffer);
     return pId;
 }
+#define IS_ATOM(x) (((ULONG_PTR)(x) > 0x0) && ((ULONG_PTR)(x) < 0x10000))
+#define QUERY_WINDOW_UNIQUE_PROCESS_ID 0
+HWND Process_FindByWindow(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter)
+{
+    // TODO: This needs to load win32u.dll
+    static HWND(NTAPI* NtUserFindWindowEx)(PVOID hwndParent, PVOID hwndChild, PUNICODE_STRING ClassName, PUNICODE_STRING WindowName, ULONG Type) = NULL;
+    if (NtUserFindWindowEx) NtUserFindWindowEx = NativeLib.Library.GetModuleFunction(L"win32u.dll", "NtUserFindWindowEx");
+    static DWORD_PTR(NTAPI * NtUserQueryWindow)(HWND hWnd, DWORD Index);
+    if (NtUserQueryWindow) NtUserQueryWindow = NativeLib.Library.GetModuleFunction(L"win32u.dll", "NtUserQueryWindow");
+    UNICODE_STRING ucClassName, * pucClassName = NULL;
+    UNICODE_STRING ucWindowName, * pucWindowName = NULL;
+
+    if (IS_ATOM(lpszClass))
+    {
+        ucClassName.Length = 0;
+        ucClassName.Buffer = lpszClass;
+        pucClassName = &ucClassName;
+    }
+    else if (lpszClass != NULL)
+    {
+        RtlInitUnicodeStringEx(&ucClassName,
+            lpszClass);
+        pucClassName = &ucClassName;
+    }
+
+    if (lpszWindow != NULL)
+    {
+        RtlInitUnicodeStringEx(&ucWindowName,
+            lpszWindow);
+        pucWindowName = &ucWindowName;
+    }
+
+    HWND hWnd = NtUserFindWindowEx(hwndParent,
+        hwndChildAfter,
+        pucClassName,
+        pucWindowName,
+        0);
+    return NtUserQueryWindow(hWnd, QUERY_WINDOW_UNIQUE_PROCESS_ID);
+}
 
 NTSTATUS Process_Terminate(HANDLE processHandle, NTSTATUS exitStatus)
 {
@@ -443,7 +482,8 @@ NTSTATUS Process_Terminate(HANDLE processHandle, NTSTATUS exitStatus)
 
 struct Process Process = {
     .Create = &Process_Create,
-    .Exists = &Process_Exists,
+    .FindByName = &Process_FindByName,
+    .FindByWindow = &Process_FindByWindow,
     .Terminate = &Process_Terminate
 };
 

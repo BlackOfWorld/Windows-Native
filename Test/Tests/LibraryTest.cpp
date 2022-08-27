@@ -52,5 +52,5 @@ TEST(Library, GetModule)
 
 TEST(Library, LoadLibrary)
 {
-    SKIP_TEST("Not yet implemented");
+    SKIP_TEST("Not yet implemented - ReadFile is missing.");
 }
