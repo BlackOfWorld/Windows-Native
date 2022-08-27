@@ -414,11 +414,11 @@ DWORD Process_Exists(const WCHAR* processName)
         return -1;
     }
     PSYSTEM_PROCESS_INFORMATION psi = buffer;
-    if (!NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, psi, Size, NULL)))
+    for(;;)
     {
-        SetLastNTError(status);
-        NativeLib.Memory.FreeHeap(buffer);
-        return -1;
+        status = NtQuerySystemInformation(SystemProcessInformation, psi, Size, &Size);
+        if (NT_SUCCESS(status)) break;
+        NativeLib.Memory.ReAllocHeap(buffer, Size, true);
     }
     while (psi->NextEntryOffset)
     {
