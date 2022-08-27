@@ -11,6 +11,7 @@ struct Memory
 {
     PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
     PVOID(*AllocateVirtual)(size_t dwSize, DWORD AllocFlags, DWORD Protect);
+    PVOID(*ReAllocHeap)(PVOID Address, DWORD dwSize, BOOL zeroMem);
     PVOID(*GetCurrentHeap)(void);
     DWORD(*GetCurrentHeaps)(void);
     BOOLEAN(*FreeHeap)(PVOID Address);

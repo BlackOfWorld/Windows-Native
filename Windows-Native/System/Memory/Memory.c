@@ -35,6 +35,13 @@ PVOID Memory_AllocateVirtual(size_t dwSize, DWORD AllocFlags, DWORD Protect)
     return NULL;
 }
 
+PVOID Memory_ReAllocHeap(PVOID Address,DWORD dwSize, BOOL zeroMem)
+{
+    static PVOID(*NTAPI RtlReAllocateHeap)(PVOID HeapHandle, ULONG Flags, PVOID MemoryPointer, ULONG Size) = NULL;
+    if(!RtlReAllocateHeap) RtlReAllocateHeap = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlReAllocateHeap");
+    return RtlReAllocateHeap(Memory.GetCurrentHeap(), zeroMem ? HEAP_ZERO_MEMORY : 0, Address, dwSize);
+}
+
 BOOLEAN Memory_FreeVirtual(LPVOID Address, SIZE_T dwSize, DWORD FreeType)
 {
     if (!dwSize || !(FreeType & MEM_RELEASE))
@@ -83,6 +90,7 @@ inline PVOID Memory_GetCurrentHeap(void) {
 struct Memory Memory = {
     .AllocateHeap = &Memory_AllocateHeap,
     .AllocateVirtual = &Memory_AllocateVirtual,
+    .ReAllocHeap = &Memory_ReAllocHeap,
     .GetCurrentHeap = &Memory_GetCurrentHeap,
     //.GetCurrentHeaps = &Memory_GetCurrentHeaps,
     .FreeHeap = &Memory_FreeHeap,
