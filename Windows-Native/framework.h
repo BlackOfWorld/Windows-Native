@@ -4,6 +4,15 @@
 #error "This architecture is currently unsupported"
 #endif
 #include <intrin.h>
+#if defined(_DEBUG)
+#define assert(expression, ...) (void)(                                                       \
+            (!!(expression)) ||                                                              \
+            (_assert(WIDE1(expression), WIDE2(__FILE__), (unsigned)(__LINE__), WIDE2(__VA_ARGS__)), 0, NULL) \
+        )
+extern void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message);
+#else
+#define assert(expression, ...) ((void)0)
+#endif
 #define MAXIMUM_SUPPORTED_EXTENSION     512
 #define SIZE_OF_80387_REGISTERS      80
 extern struct _CPUFeatures
@@ -162,12 +171,15 @@ typedef enum
 
 // types
 #if defined(_WIN64)
-typedef __int64 LONGLONG;
-typedef unsigned __int64 ULONGLONG;
-typedef unsigned __int64 size_t;
-typedef __int64          ptrdiff_t;
-typedef __int64          intptr_t;
+#define POINTER_64 __ptr64
+#define POINTER_32 __ptr32
 
+typedef __int64           LONGLONG;
+typedef unsigned __int64  ULONGLONG;
+typedef unsigned __int64  size_t;
+typedef __int64           ptrdiff_t;
+typedef __int64           intptr_t;
+typedef unsigned __int64  uintptr_t;
 #define MAXLONGLONG                         (0x7fffffffffffffff)
 
 typedef unsigned __int64 POINTER_64_INT;
@@ -180,6 +192,9 @@ typedef unsigned __int64 ULONG_PTR, * PULONG_PTR;
 #define __int3264   __int64
 
 #else
+#define POINTER_64
+#define POINTER_32
+
 struct PRTL_CRITICAL_SECTION;
 typedef _W64 int INT_PTR, * PINT_PTR;
 typedef _W64 unsigned int UINT_PTR, * PUINT_PTR;
@@ -192,14 +207,9 @@ typedef _W64 unsigned long ULONG_PTR, * PULONG_PTR;
 typedef unsigned int     size_t;
 typedef int              ptrdiff_t;
 typedef int              intptr_t;
+typedef unsigned int     uintptr_t;
 #endif
-#if defined(_WIN64)
-#define POINTER_64 __ptr64
-#define POINTER_32 __ptr32
-#else
-#define POINTER_64
-#define POINTER_32
-#endif
+
 
 
 #define CONTAINING_RECORD(address, type, field) ((type *)( \
@@ -259,6 +269,8 @@ typedef unsigned long ULONG, * PULONG;
 typedef unsigned int ULONG32;
 typedef unsigned __int64 ULONG64;
 typedef unsigned __int64 ULONGLONG;
+typedef LONGLONG* PLONGLONG;
+typedef ULONGLONG* PULONGLONG;
 typedef short SHORT;
 typedef ULONG_PTR SIZE_T;
 typedef UCHAR* STRING;

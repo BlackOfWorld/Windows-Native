@@ -1,12 +1,7 @@
 #include "framework.h"
 #include "General.h"
-#include "System/User/Console.h"
-#define assert(expression, ...) (void)(                                                       \
-            (!!(expression)) ||                                                              \
-            (_assert(WIDE(expression), WIDE(__FILE__) , (unsigned)(__LINE__), WIDE(__VA_ARGS__)), 0, NULL) \
-        )
+#include "User/Console.h"
 
-extern void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message);
 
 typedef struct _RUN_ENTRY RUN_ENTRY, * PRUN_ENTRY;
 extern const RUN_ENTRY RtlpRunTable[];
@@ -138,7 +133,7 @@ void _internal_ito(PCHAR buf, uint64_t val, unsigned shift)
         *((uint64_t*)buf) = (*((uint64_t*)buf) << shift) | (n0 + L'0' - (val /= 10) * 10);
     } while (val);
 }
-void itoa(char* buf, uint32_t val)
+void itoa(char* buf, uint64_t val)
 {
     _internal_ito(buf, val, 8);
 }
@@ -146,8 +141,8 @@ void itow(wchar_t* buf, uint64_t val)
 {
     _internal_ito((PCHAR)buf, val, 16);
 }
-
-static void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message)
+#if defined(_DEBUG)
+void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message)
 {
     if ((NtGetPeb()->ProcessParameters->WindowFlags & 0x400) != 0)
         NativeLib.Process.Terminate(NtCurrentProcess(), SIGABRT);
@@ -200,7 +195,7 @@ static void _assert(const wchar_t* expression, const wchar_t* file, unsigned lin
     }
 
     // new lines
-    for (auto i = length; i < totalLength; i++)
+    for (size_t i = length; i < totalLength; i++)
         outputMsg[i] = L'\n';
 
     outputMsg[totalLength] = L'\0';
@@ -209,7 +204,7 @@ static void _assert(const wchar_t* expression, const wchar_t* file, unsigned lin
         __fastfail(7u);
     NativeLib.Process.Terminate(NtCurrentProcess(), SIGABRT);
 }
-
+#endif
 
 static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
