@@ -1,12 +1,6 @@
 ﻿#include "Path.h"
 
 
-#ifdef _WIN64
-#define NTCALL __fastcall
-#else
-#define NTCALL __stdcall
-#endif
-
 //THIS FUCKS UP THE STACK!!
 NTSTATUS RtlDosSearchPath_Ustr(
     ULONG Flags,
@@ -36,26 +30,27 @@ NTSTATUS RtlDosSearchPath_Ustr(
 
 NTSTATUS RtlDosPathNameToNtPathName_U(PCWSTR DosName, PUNICODE_STRING NtName, PWSTR* PartName, PRTL_RELATIVE_NAME_U RelativeName)
 {
-    static NTSTATUS(NTCALL* RtlpDosPathNameToRelativeNtPathName_Ustr)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR * FilePart, PRTL_RELATIVE_NAME_U RelativeName);
+    static NTSTATUS(NTAPI* RtlpDosPathNameToRelativeNtPathName_Ustr)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR * FilePart, PRTL_RELATIVE_NAME_U RelativeName);
     if (!RtlpDosPathNameToRelativeNtPathName_Ustr) RtlpDosPathNameToRelativeNtPathName_Ustr = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlDosLongPathNameToNtPathName_U_WithStatus");
     return RtlpDosPathNameToRelativeNtPathName_Ustr(DosName, NtName, PartName, RelativeName);
 }
 NTSTATUS RtlGetExePath(PCWSTR name, PWSTR* path)
 {
-    static NTSTATUS(NTCALL* RtlGetExePath)(PCWSTR name, PWSTR * path) = NULL;
+    static NTSTATUS(NTAPI* RtlGetExePath)(PCWSTR name, PWSTR * path) = NULL;
     if (!RtlGetExePath) RtlGetExePath = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlGetExePath");
     return RtlGetExePath(name, path);
 }
 NTSTATUS RtlGetSearchPath(PWCHAR* SearchPath)
 {
-    static NTSTATUS(NTCALL* RtlGetSearchPath)(PWCHAR* SearchPath) = NULL;
+    static NTSTATUS(NTAPI* RtlGetSearchPath)(PWCHAR* SearchPath) = NULL;
     if (!RtlGetSearchPath) RtlGetSearchPath = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlGetSearchPath");
     return RtlGetSearchPath(SearchPath);
 }
 
-DWORD SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR* lpFilePart)
+SIZE_T SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWORD nBufferLength, LPWSTR lpBuffer, LPWSTR* lpFilePart)
 {
-    UNICODE_STRING FileNameString, ExtensionString, PathString, CallerBuffer;
+    UNICODE_STRING FileNameString = { 0 }, ExtensionString = { 0 },
+    PathString = { 0 }, CallerBuffer = { 0 };
 
     SIZE_T LengthNeeded, FilePartSize;
     SIZE_T Result = 0;

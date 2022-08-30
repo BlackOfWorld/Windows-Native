@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <framework.h>
 #include "General.h"
 

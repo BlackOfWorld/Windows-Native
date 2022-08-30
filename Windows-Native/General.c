@@ -11,7 +11,10 @@
 #include "System/Process/CurrentProcess.h"
 
 struct nativeLib NativeLib;
-NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
+NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
+NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);
+
+
 EXTERNC void NativeInit()
 {
     if (NativeLib.isInitialized) return;
@@ -22,5 +25,6 @@ EXTERNC void NativeInit()
     NativeLib.Memory = Memory;
     NativeLib.File = File;
     cpu_detect_features();
+    NtWaitForSingleObject = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtWaitForSingleObject");
     NtClose = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtClose");
 }

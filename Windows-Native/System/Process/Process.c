@@ -314,7 +314,7 @@ typedef struct _RTL_USER_PROCESS_INFORMATION {
 #ifdef _WIN64
 #define callc __fastcall
 #else
-#define callc __stdcall
+#define callc NTAPI
 #endif
 
 
@@ -333,7 +333,7 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
     PRTL_USER_PROCESS_PARAMETERS processParams = NULL;
     // https://offensivedefence.co.uk/posts/ntcreateuserprocess/
     OBJECT_ATTRIBUTES objAttr = { sizeof(OBJECT_ATTRIBUTES) };
-    DWORD wImagePathLength =
+    SIZE_T wImagePathLength =
         Path.SearchPathW(NULL, fileName, L".exe", sizeof(wImagePath) / sizeof(WCHAR),
             wImagePath, NULL);
 
@@ -395,13 +395,13 @@ PHANDLE Process_Create(const WCHAR* fileName, const WCHAR* params)
 }
 #endif
 
-DWORD Process_FindByName(const WCHAR* processName)
+DWORD_PTR Process_FindByName(const WCHAR* processName)
 {
-    static NTSTATUS(__stdcall * NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength) = NULL;
+    static NTSTATUS(NTAPI * NtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength) = NULL;
     if (!NtQuerySystemInformation) NtQuerySystemInformation = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQuerySystemInformation");
     NTSTATUS status;
     ULONG Size = 0;
-    DWORD pId = -1;
+    DWORD_PTR pId = -1;
     if (NT_SUCCESS(status = NtQuerySystemInformation(SystemProcessInformation, NULL, 0, &Size)))
     {
         SetLastNTError(status);
@@ -422,9 +422,9 @@ DWORD Process_FindByName(const WCHAR* processName)
     }
     while (psi->NextEntryOffset)
     {
-        psi = (PSYSTEM_PROCESS_INFORMATION)((LPBYTE)psi + psi->NextEntryOffset);
+        psi = (PSYSTEM_PROCESS_INFORMATION)(PVOID)((LPBYTE)psi + psi->NextEntryOffset);
         if (strcmpW(psi->ImageName.Buffer, processName)) continue;
-        pId = (DWORD)psi->UniqueProcessId;
+        pId = (DWORD_PTR)psi->UniqueProcessId;
         break;
     }
 
@@ -433,20 +433,20 @@ DWORD Process_FindByName(const WCHAR* processName)
 }
 #define IS_ATOM(x) (((ULONG_PTR)(x) > 0x0) && ((ULONG_PTR)(x) < 0x10000))
 #define QUERY_WINDOW_UNIQUE_PROCESS_ID 0
-DWORD Process_FindByWindow(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter)
+DWORD_PTR Process_FindByWindow(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter)
 {
     // TODO: This needs to load win32u.dll
     static HWND(NTAPI* NtUserFindWindowEx)(PVOID hwndParent, PVOID hwndChild, PUNICODE_STRING ClassName, PUNICODE_STRING WindowName, ULONG Type) = NULL;
     if (NtUserFindWindowEx) NtUserFindWindowEx = NativeLib.Library.GetModuleFunction(L"win32u.dll", "NtUserFindWindowEx");
     static DWORD_PTR(NTAPI * NtUserQueryWindow)(HWND hWnd, DWORD Index);
     if (NtUserQueryWindow) NtUserQueryWindow = NativeLib.Library.GetModuleFunction(L"win32u.dll", "NtUserQueryWindow");
-    UNICODE_STRING ucClassName, * pucClassName = NULL;
-    UNICODE_STRING ucWindowName, * pucWindowName = NULL;
+    UNICODE_STRING ucClassName = { 0 }, * pucClassName = NULL;
+    UNICODE_STRING ucWindowName = { 0 }, * pucWindowName = NULL;
 
     if (IS_ATOM(lpszClass))
     {
         ucClassName.Length = 0;
-        ucClassName.Buffer = lpszClass;
+        ucClassName.Buffer = (wchar_t*)lpszClass;
         pucClassName = &ucClassName;
     }
     else if (lpszClass != NULL)

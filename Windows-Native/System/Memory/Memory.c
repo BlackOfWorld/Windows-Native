@@ -26,7 +26,7 @@ PVOID Memory_AllocateHeap(DWORD dwSize, BOOL zeroMem)
 }
 PVOID Memory_AllocateVirtual(size_t dwSize, DWORD AllocFlags, DWORD Protect)
 {
-    static NTSTATUS(__stdcall * NtAllocateVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, PSIZE_T RegionSize, ULONG AllocationType, ULONG Protect);
+    static NTSTATUS(NTAPI * NtAllocateVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, ULONG_PTR ZeroBits, PSIZE_T RegionSize, ULONG AllocationType, ULONG Protect);
     if (!NtAllocateVirtualMemory) NtAllocateVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtAllocateVirtualMemory");
     LPVOID address = NULL;
     NTSTATUS status = NtAllocateVirtualMemory(NtCurrentProcess(), &address, 0, &dwSize, AllocFlags & 0xFFFFFFC0, Protect);
@@ -37,7 +37,7 @@ PVOID Memory_AllocateVirtual(size_t dwSize, DWORD AllocFlags, DWORD Protect)
 
 PVOID Memory_ReAllocHeap(PVOID Address,DWORD dwSize, BOOL zeroMem)
 {
-    static PVOID(*NTAPI RtlReAllocateHeap)(PVOID HeapHandle, ULONG Flags, PVOID MemoryPointer, ULONG Size) = NULL;
+    static PVOID(NTAPI* RtlReAllocateHeap)(PVOID HeapHandle, ULONG Flags, PVOID MemoryPointer, ULONG Size) = NULL;
     if(!RtlReAllocateHeap) RtlReAllocateHeap = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlReAllocateHeap");
     return RtlReAllocateHeap(Memory.GetCurrentHeap(), zeroMem ? HEAP_ZERO_MEMORY : 0, Address, dwSize);
 }
@@ -49,8 +49,8 @@ BOOLEAN Memory_FreeVirtual(LPVOID Address, SIZE_T dwSize, DWORD FreeType)
         SetLastNTError(STATUS_INVALID_PARAMETER);
         return false;
     }
-    static NTSTATUS(__stdcall* NtFreeVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, PSIZE_T RegionSize, ULONG FreeType);
-    static BOOLEAN(__stdcall * RtlFlushSecureMemoryCache)(PVOID MemoryCache, SIZE_T MemoryLength);
+    static NTSTATUS(NTAPI* NtFreeVirtualMemory)(HANDLE ProcessHandle, PVOID * BaseAddress, PSIZE_T RegionSize, ULONG FreeType);
+    static BOOLEAN(NTAPI * RtlFlushSecureMemoryCache)(PVOID MemoryCache, SIZE_T MemoryLength);
     if (!NtFreeVirtualMemory) NtFreeVirtualMemory = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtFreeVirtualMemory");
     if(!RtlFlushSecureMemoryCache) RtlFlushSecureMemoryCache = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "RtlFlushSecureMemoryCache");
     NTSTATUS status = NtFreeVirtualMemory(NtCurrentProcess(), &Address, &dwSize, FreeType);
@@ -80,7 +80,7 @@ inline PVOID Memory_GetCurrentHeap(void) {
     return heap;
 }
 //DWORD Memory_GetCurrentHeaps(void) {
-//    static DWORD(__stdcall * GetProcessHeaps)(DWORD NumberOfHeaps, PHANDLE ProcessHeaps);
+//    static DWORD(NTAPI * GetProcessHeaps)(DWORD NumberOfHeaps, PHANDLE ProcessHeaps);
 //    if (!GetProcessHeaps) GetProcessHeaps = NativeLib.Library.GetModuleFunction(L"kernel32.dll", "GetProcessHeaps");
 //    DWORD nHeaps = GetProcessHeaps(0, NULL);
 //    return GetProcessHeaps(0, NULL);

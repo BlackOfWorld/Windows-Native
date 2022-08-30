@@ -27,8 +27,8 @@ struct CurrentProcess
 struct Process
 {
     PHANDLE(*Create)(const WCHAR*, const WCHAR*);
-    DWORD(*FindByName)(const WCHAR* processName);
-    DWORD(*FindByWindow)(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter);
+    DWORD_PTR(*FindByName)(const WCHAR* processName);
+    DWORD_PTR(*FindByWindow)(LPCWSTR lpszClass, LPCWSTR lpszWindow, HWND hwndParent, HWND hwndChildAfter);
     NTSTATUS(*Terminate)(HANDLE processHandle, NTSTATUS exitStatus);
     struct CurrentProcess CurrentProcess;
 };
