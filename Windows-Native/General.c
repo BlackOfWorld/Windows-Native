@@ -14,7 +14,7 @@ struct nativeLib NativeLib;
 NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);
 
 
-NTSTATUS NTAPI NtClose(HANDLE Handle)
+NTSTATUS NtClose(HANDLE Handle)
 {
     static NTSTATUS(NTAPI * _imp_NtClose)(HANDLE Handle);
     static NTSTATUS(NTAPI* NtQueryObject)(HANDLE ObjectHandle, OBJECT_INFORMATION_CLASS ObjectInformationClass,PVOID ObjectInformation,ULONG Length,PULONG ResultLength);

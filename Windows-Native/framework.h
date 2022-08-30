@@ -2758,9 +2758,10 @@ typedef enum _OBJECT_INFORMATION_CLASS {
     ObjectAllInformation,
     ObjectDataInformation
 } OBJECT_INFORMATION_CLASS, * POBJECT_INFORMATION_CLASS;
+extern NTSTATUS NtClose(HANDLE Handle);
+
 extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);
 
-extern NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
 extern NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);
 
 #undef SIZE_OF_80387_REGISTERS
