@@ -1,5 +1,13 @@
 #include "framework.h"
 #include "General.h"
+#include "System/User/Console.h"
+#define assert(expression, ...) (void)(                                                       \
+            (!!(expression)) ||                                                              \
+            (_assert(WIDE(expression), WIDE(__FILE__) , (unsigned)(__LINE__), WIDE(__VA_ARGS__)), 0, NULL) \
+        )
+
+extern void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message);
+
 typedef struct _RUN_ENTRY RUN_ENTRY, * PRUN_ENTRY;
 extern const RUN_ENTRY RtlpRunTable[];
 extern const USHORT RtlpStatusTable[];
@@ -138,6 +146,71 @@ void itow(wchar_t* buf, uint64_t val)
 {
     _internal_ito((PCHAR)buf, val, 16);
 }
+
+static void _assert(const wchar_t* expression, const wchar_t* file, unsigned line, const wchar_t* message)
+{
+    if ((NtGetPeb()->ProcessParameters->WindowFlags & 0x400) != 0)
+        NativeLib.Process.Terminate(NtCurrentProcess(), SIGABRT);
+
+    size_t expressionLength = wcslen(expression);
+    size_t fileLength = wcslen(file);
+    size_t lineLength = udc(line);
+    size_t msgLength = 0;
+    if (*message) msgLength = wcslen(message) + 9 + 1;
+
+    size_t totalLength = 7 + expressionLength + 12 + fileLength + 6 + lineLength + 6 + 4 + msgLength;
+
+    wchar_t* wLine = NativeLib.Memory.AllocateHeap(lineLength, true);
+    wchar_t* outputMsg = NativeLib.Memory.AllocateHeap(totalLength, true);
+    itow(wLine, line);
+
+    size_t length = 0;
+
+    //Empty console
+    wstrcpy(outputMsg, L"\x1B[2J\x1B[H");
+    length += 7;
+
+    //Expression
+    wstrcpy(outputMsg + length, L"Expression: ");
+    length += 12;
+    wstrcpy(outputMsg + length, expression);
+    length += expressionLength;
+    outputMsg[length++] = L'\n';
+
+    //File
+    wstrcpy(outputMsg + length, L"File: ");
+    length += 6;
+    wstrcpy(outputMsg + length, file);
+    length += fileLength;
+    outputMsg[length++] = L'\n';
+
+    // Line
+    wstrcpy(outputMsg + length, L"Line: ");
+    length += 6;
+    wstrcpy(outputMsg + length, wLine);
+    length += lineLength;
+
+    if (*message)
+    {
+        outputMsg[length++] = L'\n';
+        wstrcpy(outputMsg + length, L"Message: ");
+
+        wstrcpy(outputMsg + length + 9, message);
+        length += msgLength;
+    }
+
+    // new lines
+    for (auto i = length; i < totalLength; i++)
+        outputMsg[i] = L'\n';
+
+    outputMsg[totalLength] = L'\0';
+    WriteConsole(STD_OUTPUT_HANDLE, outputMsg, totalLength * 2, NULL);
+    if (((PKUSER_SHARED_DATA)0x7FFE0000)->ProcessorFeatures[PF_FASTFAIL_AVAILABLE])
+        __fastfail(7u);
+    NativeLib.Process.Terminate(NtCurrentProcess(), SIGABRT);
+}
+
+
 static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
 #if USE_ERRORS_FROM_NTDLL

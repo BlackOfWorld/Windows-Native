@@ -23,6 +23,88 @@ extern struct _CPUFeatures
     char cpu_FSRC;       //Fast Short REP CMPSB and SCASB
 } CPUFeatures;
 
+#define FAST_FAIL_LEGACY_GS_VIOLATION               0
+#define FAST_FAIL_VTGUARD_CHECK_FAILURE             1
+#define FAST_FAIL_STACK_COOKIE_CHECK_FAILURE        2
+#define FAST_FAIL_CORRUPT_LIST_ENTRY                3
+#define FAST_FAIL_INCORRECT_STACK                   4
+#define FAST_FAIL_INVALID_ARG                       5
+#define FAST_FAIL_GS_COOKIE_INIT                    6
+#define FAST_FAIL_FATAL_APP_EXIT                    7
+#define FAST_FAIL_RANGE_CHECK_FAILURE               8
+#define FAST_FAIL_UNSAFE_REGISTRY_ACCESS            9
+#define FAST_FAIL_GUARD_ICALL_CHECK_FAILURE         10
+#define FAST_FAIL_GUARD_WRITE_CHECK_FAILURE         11
+#define FAST_FAIL_INVALID_FIBER_SWITCH              12
+#define FAST_FAIL_INVALID_SET_OF_CONTEXT            13
+#define FAST_FAIL_INVALID_REFERENCE_COUNT           14
+#define FAST_FAIL_INVALID_JUMP_BUFFER               18
+#define FAST_FAIL_MRDATA_MODIFIED                   19
+#define FAST_FAIL_CERTIFICATION_FAILURE             20
+#define FAST_FAIL_INVALID_EXCEPTION_CHAIN           21
+#define FAST_FAIL_CRYPTO_LIBRARY                    22
+#define FAST_FAIL_INVALID_CALL_IN_DLL_CALLOUT       23
+#define FAST_FAIL_INVALID_IMAGE_BASE                24
+#define FAST_FAIL_DLOAD_PROTECTION_FAILURE          25
+#define FAST_FAIL_UNSAFE_EXTENSION_CALL             26
+#define FAST_FAIL_DEPRECATED_SERVICE_INVOKED        27
+#define FAST_FAIL_INVALID_BUFFER_ACCESS             28
+#define FAST_FAIL_INVALID_BALANCED_TREE             29
+#define FAST_FAIL_INVALID_NEXT_THREAD               30
+#define FAST_FAIL_GUARD_ICALL_CHECK_SUPPRESSED      31
+#define FAST_FAIL_APCS_DISABLED                     32
+#define FAST_FAIL_INVALID_IDLE_STATE                33
+#define FAST_FAIL_MRDATA_PROTECTION_FAILURE         34
+#define FAST_FAIL_UNEXPECTED_HEAP_EXCEPTION         35
+#define FAST_FAIL_INVALID_LOCK_STATE                36
+#define FAST_FAIL_GUARD_JUMPTABLE                   37
+#define FAST_FAIL_INVALID_LONGJUMP_TARGET           38
+#define FAST_FAIL_INVALID_DISPATCH_CONTEXT          39
+#define FAST_FAIL_INVALID_THREAD                    40
+#define FAST_FAIL_INVALID_SYSCALL_NUMBER            41
+#define FAST_FAIL_INVALID_FILE_OPERATION            42
+#define FAST_FAIL_LPAC_ACCESS_DENIED                43
+#define FAST_FAIL_GUARD_SS_FAILURE                  44
+#define FAST_FAIL_LOADER_CONTINUITY_FAILURE         45
+#define FAST_FAIL_GUARD_EXPORT_SUPPRESSION_FAILURE  46
+#define FAST_FAIL_INVALID_CONTROL_STACK             47
+#define FAST_FAIL_SET_CONTEXT_DENIED                48
+#define FAST_FAIL_INVALID_IAT                       49
+#define FAST_FAIL_HEAP_METADATA_CORRUPTION          50
+#define FAST_FAIL_PAYLOAD_RESTRICTION_VIOLATION     51
+#define FAST_FAIL_LOW_LABEL_ACCESS_DENIED           52
+#define FAST_FAIL_ENCLAVE_CALL_FAILURE              53
+#define FAST_FAIL_UNHANDLED_LSS_EXCEPTON            54
+#define FAST_FAIL_ADMINLESS_ACCESS_DENIED           55
+#define FAST_FAIL_UNEXPECTED_CALL                   56
+#define FAST_FAIL_CONTROL_INVALID_RETURN_ADDRESS    57
+#define FAST_FAIL_UNEXPECTED_HOST_BEHAVIOR          58
+#define FAST_FAIL_FLAGS_CORRUPTION                  59
+#define FAST_FAIL_VEH_CORRUPTION                    60
+#define FAST_FAIL_ETW_CORRUPTION                    61
+#define FAST_FAIL_RIO_ABORT                         62
+#define FAST_FAIL_INVALID_PFN                       63
+#define FAST_FAIL_GUARD_ICALL_CHECK_FAILURE_XFG     64
+#define FAST_FAIL_CAST_GUARD                        65
+#define FAST_FAIL_HOST_VISIBILITY_CHANGE            66
+#define FAST_FAIL_KERNEL_CET_SHADOW_STACK_ASSIST    67
+#define FAST_FAIL_PATCH_CALLBACK_FAILED             68
+#define FAST_FAIL_NTDLL_PATCH_FAILED                69
+#define FAST_FAIL_INVALID_FLS_DATA                  70
+#define FAST_FAIL_INVALID_FAST_FAIL_CODE            0xFFFFFFFF
+
+typedef enum
+{
+    SIGINT = 2,       // interrupt
+    SIGILL = 4,       // illegal instruction - invalid function image
+    SIGFPE = 8,       // floating point exception
+    SIGSEGV = 11,     // segment violation
+    SIGTERM = 15,     // Software termination signal from kill
+    SIGBREAK = 21,    // Ctrl-Break sequence
+    SIGABRT = 22      // abnormal termination triggered by abort call
+} ExitCode;
+
+
 #ifdef __cplusplus
 #   define EXTERNC extern "C"
 #else
@@ -48,6 +130,8 @@ extern struct _CPUFeatures
 #else
 #define MAXIMUM_PROC_PER_GROUP 32
 #endif
+
+
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_offsetof)
@@ -169,6 +253,7 @@ typedef unsigned int UINT;
 typedef unsigned char UINT8;
 typedef unsigned short UINT16;
 typedef unsigned int UINT32;
+typedef unsigned int uint32_t;
 typedef unsigned __int64 UINT64;
 typedef unsigned long ULONG, * PULONG;
 typedef unsigned int ULONG32;
@@ -191,6 +276,14 @@ typedef signed __int64 INT64;
 typedef const wchar_t* LMCSTR;
 typedef WCHAR* LMSTR;
 typedef unsigned short WORD, * PWORD, * LPWORD;
+typedef signed char        int8_t;
+typedef short              int16_t;
+typedef int                int32_t;
+typedef long long          int64_t;
+typedef unsigned char      uint8_t;
+typedef unsigned short     uint16_t;
+typedef unsigned int       uint32_t;
+typedef unsigned long long uint64_t;
 
 typedef void VOID, * PVOID, * LPVOID;
 typedef void* POINTER_32 PVOID32;
@@ -331,8 +424,7 @@ typedef DWORD NTSTATUS;
 #define NULL 0
 #endif
 #define bool  _Bool
-#define false 0
-#define true  1
+enum { false, true };
 #define FALSE 0
 #define TRUE 1
 
@@ -414,6 +506,19 @@ typedef DWORD NTSTATUS;
 #define STD_INPUT_HANDLE    (HANDLE)((DWORD)-10)
 #define STD_OUTPUT_HANDLE   (HANDLE)((DWORD)-11)
 #define STD_ERROR_HANDLE    (HANDLE)((DWORD)-12)
+typedef struct _OVERLAPPED {
+    ULONG_PTR Internal;
+    ULONG_PTR InternalHigh;
+    union {
+        struct {
+            DWORD Offset;
+            DWORD OffsetHigh;
+        };
+        PVOID Pointer;
+    };
+    HANDLE hEvent;
+} OVERLAPPED, * POVERLAPPED, * LPOVERLAPPED;
+
 
 #define NT_SUCCESS(Status) ((ULONG)(Status) == 0)
 #define NT_INFORMATION(Status) ((ULONG)(Status) >> 30==1)
@@ -2197,6 +2302,53 @@ typedef struct _XSTATE_CONFIGURATION
     ULONG AllNonLargeFeatureSize;                                           //0x340
     ULONG Spare;                                                            //0x344
 } XSTATE_CONFIGURATION, * PXSTATE_CONFIGURATION;
+
+#define PF_FLOATING_POINT_PRECISION_ERRATA           0
+#define PF_FLOATING_POINT_EMULATED                   1
+#define PF_COMPARE_EXCHANGE_DOUBLE                   2
+#define PF_MMX_INSTRUCTIONS_AVAILABLE                3
+#define PF_PPC_MOVEMEM_64BIT_OK                      4
+#define PF_ALPHA_BYTE_INSTRUCTIONS                   5
+#define PF_XMMI_INSTRUCTIONS_AVAILABLE               6
+#define PF_3DNOW_INSTRUCTIONS_AVAILABLE              7
+#define PF_RDTSC_INSTRUCTION_AVAILABLE               8
+#define PF_PAE_ENABLED                               9
+#define PF_XMMI64_INSTRUCTIONS_AVAILABLE            10
+#define PF_SSE_DAZ_MODE_AVAILABLE                   11
+#define PF_NX_ENABLED                               12
+#define PF_SSE3_INSTRUCTIONS_AVAILABLE              13
+#define PF_COMPARE_EXCHANGE128                      14
+#define PF_COMPARE64_EXCHANGE128                    15
+#define PF_CHANNELS_ENABLED                         16
+#define PF_XSAVE_ENABLED                            17
+#define PF_ARM_VFP_32_REGISTERS_AVAILABLE           18
+#define PF_ARM_NEON_INSTRUCTIONS_AVAILABLE          19
+#define PF_SECOND_LEVEL_ADDRESS_TRANSLATION         20
+#define PF_VIRT_FIRMWARE_ENABLED                    21
+#define PF_RDWRFSGSBASE_AVAILABLE                   22
+#define PF_FASTFAIL_AVAILABLE                       23
+#define PF_ARM_DIVIDE_INSTRUCTION_AVAILABLE         24
+#define PF_ARM_64BIT_LOADSTORE_ATOMIC               25
+#define PF_ARM_EXTERNAL_CACHE_AVAILABLE             26
+#define PF_ARM_FMAC_INSTRUCTIONS_AVAILABLE          27
+#define PF_RDRAND_INSTRUCTION_AVAILABLE             28
+#define PF_ARM_V8_INSTRUCTIONS_AVAILABLE            29
+#define PF_ARM_V8_CRYPTO_INSTRUCTIONS_AVAILABLE     30
+#define PF_ARM_V8_CRC32_INSTRUCTIONS_AVAILABLE      31
+#define PF_RDTSCP_INSTRUCTION_AVAILABLE             32
+#define PF_RDPID_INSTRUCTION_AVAILABLE              33
+#define PF_ARM_V81_ATOMIC_INSTRUCTIONS_AVAILABLE    34
+#define PF_MONITORX_INSTRUCTION_AVAILABLE           35
+#define PF_SSSE3_INSTRUCTIONS_AVAILABLE             36
+#define PF_SSE4_1_INSTRUCTIONS_AVAILABLE            37
+#define PF_SSE4_2_INSTRUCTIONS_AVAILABLE            38
+#define PF_AVX_INSTRUCTIONS_AVAILABLE               39
+#define PF_AVX2_INSTRUCTIONS_AVAILABLE              40
+#define PF_AVX512F_INSTRUCTIONS_AVAILABLE           41
+#define PF_ERMS_AVAILABLE                           42
+#define PF_ARM_V82_DP_INSTRUCTIONS_AVAILABLE        43
+#define PF_ARM_V83_JSCVT_INSTRUCTIONS_AVAILABLE     44
+
 typedef struct _KUSER_SHARED_DATA
 {
     ULONG TickCountLowDeprecated;                                           //0x0
@@ -2550,16 +2702,16 @@ inline WCHAR* strcatW(WCHAR* dst, const WCHAR* src)
 }
 
 
-#pragma region Translation table
-static const RUN_ENTRY RtlpRunTable[] = {
-    {0x00000000, 0x0001, 0x0001},
-    {0x00000103, 0x0001, 0x0001},
-    {0x00000105, 0x0003, 0x0001},
-    {0x0000010c, 0x0002, 0x0001},
-    {0x00000121, 0x0001, 0x0001},
-    {0x40000002, 0x0001, 0x0001},
-    {0x40000006, 0x0001, 0x0001},
-    {0x40000008, 0x0002, 0x0001},
+inline unsigned udc(unsigned u) //unsigned digit count
+{
+    unsigned c = 0;
+    do
+        ++c;
+    while ((u /= 10) != 0);
+    return c;
+}
+extern void itoa(char* buf, uint32_t val);
+extern void itow(wchar_t* buf, uint32_t val);
 #define NtCurrentProcess()   ((HANDLE)(LONG_PTR)-1)
 #define NtCurrentThread()    ((HANDLE)(LONG_PTR)-2)
 #define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
@@ -2569,13 +2721,26 @@ static const RUN_ENTRY RtlpRunTable[] = {
 #define GetLastNTError(err)  NtGetTeb()->LastStatusValue
 #define INVALID_HANDLE_VALUE             ((HANDLE)(LONG_PTR)-1)
 #define ERROR_INVALID_PARAMETER          87L
+
+#define STRINGIZE_(x) #x
+#define STRINGIZE(x) STRINGIZE_(x)
+#define WIDE_(s) L###s
+#define WIDE(s) WIDE_(s)
+#define CONCATENATE_(a, b) a ## b
+#define CONCATENATE(a, b)  CONCATENATE_(a, b)
+
+
 extern inline void SetLastNTStatus(ULONG err);
 extern inline void SetLastNTError(ULONG err);
 extern PTEB NtGetTeb(void);
 extern inline PPEB NtGetPeb(void);
 
 extern void cpu_detect_features(void);
-extern NTSTATUS(__stdcall* NtClose)(HANDLE Handle);
+extern NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
 extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);
+
+extern NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
+extern NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);
+
 #undef SIZE_OF_80387_REGISTERS
 #undef MAXIMUM_SUPPORTED_EXTENSION
