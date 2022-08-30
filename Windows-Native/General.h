@@ -44,6 +44,7 @@ struct Library
 struct File
 {
     HANDLE(*Create)(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
+    BOOLEAN(*Write)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, PVOID lpOverlapped);
     UINT64(*Size)(HANDLE hFile);
     BOOL(*Close)(HANDLE hFile);
 };

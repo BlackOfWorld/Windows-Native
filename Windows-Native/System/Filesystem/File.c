@@ -191,6 +191,94 @@ HANDLE File_Create(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 
     return FileHandle;
 }
+BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, PVOID lpOverlapped)
+{
+    LPOVERLAPPED overlapped = lpOverlapped;
+    typedef void (IO_APC_ROUTINE)(void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, unsigned long    reserved);
+    static NTSTATUS(NTAPI * NtWriteFile)(HANDLE FileHandle, HANDLE Event, IO_APC_ROUTINE * ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key);
+    if (!NtWriteFile) NtWriteFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtWriteFile");
+
+    switch ((size_t)hFile)
+    {
+    case STD_ERROR_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardError;
+        break;
+    case STD_OUTPUT_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardOutput;
+        break;
+    case STD_INPUT_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardInput;
+        break;
+    default: break;
+    }
+
+    if (overlapped != NULL)
+    {
+        ULARGE_INTEGER offset =
+        {
+            .LowPart = overlapped->Offset,
+            .HighPart = overlapped->OffsetHigh
+        };
+
+        overlapped->Internal = STATUS_PENDING;
+        PVOID apcContext = (ULONG_PTR)overlapped->hEvent & 0x1 ? NULL : overlapped;
+
+        NTSTATUS status = NtWriteFile(hFile,
+            overlapped->hEvent,
+            NULL,
+            apcContext,
+            (PIO_STATUS_BLOCK)overlapped,
+            (PVOID)lpBuffer,
+            nNumberOfBytesToWrite,
+            &offset,
+            NULL);
+
+        if (!NT_SUCCESS(status) || status == STATUS_PENDING)
+        {
+            SetLastNTError(status);
+            return FALSE;
+        }
+
+        if (lpNumberOfBytesWritten)
+            *lpNumberOfBytesWritten = overlapped->InternalHigh;
+    }
+    else
+    {
+        IO_STATUS_BLOCK ioStatusBlock;
+
+        NTSTATUS status = NtWriteFile(hFile,
+            NULL,
+            NULL,
+            NULL,
+            &ioStatusBlock,
+            (PVOID)lpBuffer,
+            nNumberOfBytesToWrite,
+            NULL,
+            NULL);
+
+        /* Wait in case operation is pending */
+        if (status == STATUS_PENDING)
+        {
+            status = NtWaitForSingleObject(hFile, FALSE, NULL);
+            if (NT_SUCCESS(status)) status = ioStatusBlock.Status;
+        }
+
+        if (NT_SUCCESS(status))
+        {
+
+            // Fun fact, in Windows it would normally crash here :P
+            if (lpNumberOfBytesWritten)
+                *lpNumberOfBytesWritten = ioStatusBlock.Information;
+        }
+        SetLastNTError(status);
+        return FALSE;
+    }
+}
+
+BOOLEAN File_Read(HANDLE hFile)
+{
+
+}
 UINT64 File_GetSize(HANDLE hFile)
 {
     if (!NtQueryInformationFile) NtQueryInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryInformationFile");
@@ -210,6 +298,7 @@ BOOL File_Close(HANDLE hFile)
 }
 struct File File = {
     .Create = &File_Create,
+    .Write = &File_Write,
     .Size = &File_GetSize,
     .Close = &File_Close,
 };
