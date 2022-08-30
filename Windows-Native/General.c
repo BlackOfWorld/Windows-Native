@@ -11,9 +11,20 @@
 #include "System/Process/CurrentProcess.h"
 
 struct nativeLib NativeLib;
-NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
 NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);
 
+
+NTSTATUS NTAPI NtClose(HANDLE Handle)
+{
+    static NTSTATUS(NTAPI * _imp_NtClose)(HANDLE Handle);
+    static NTSTATUS(NTAPI* NtQueryObject)(HANDLE ObjectHandle, OBJECT_INFORMATION_CLASS ObjectInformationClass,PVOID ObjectInformation,ULONG Length,PULONG ResultLength);
+    if(!NtQueryObject) NtQueryObject = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtQueryObject");
+    if(!_imp_NtClose) _imp_NtClose = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtClose");
+    OBJECT_ATTRIBUTES objAttr;
+    NTSTATUS status = NtQueryObject(Handle, ObjectNameInformation, &objAttr, 2, 0);
+    assert(status != STATUS_INVALID_HANDLE, "Invalid handle!");
+    return _imp_NtClose(Handle);
+}
 
 EXTERNC void NativeInit()
 {
@@ -26,5 +37,4 @@ EXTERNC void NativeInit()
     NativeLib.File = File;
     cpu_detect_features();
     NtWaitForSingleObject = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtWaitForSingleObject");
-    NtClose = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtClose");
 }
