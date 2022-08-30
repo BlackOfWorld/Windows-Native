@@ -17,6 +17,20 @@ filter("language:C++")
 filter("language:C")
   cdialect("C17")
 
+filter "configurations:Debug"
+    defines { "DEBUG", "_DEBUG" }
+    symbols "Full"
+    runtime "Debug"
+    flags {"Maps"}
+
+filter "configurations:Release"
+    defines { "NDEBUG" }
+    symbols "Off"
+    rtti ("Off")
+    optimize "Speed"
+    runtime "Release"
+    -- staticruntime "on" -- I don't know if this is really worth the file size increase tbh...
+
 workspace("Windows-Native")
   location("./out")
   objdir("./out/link")
