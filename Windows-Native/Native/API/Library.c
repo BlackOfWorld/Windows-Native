@@ -72,11 +72,11 @@ void* Library_GetFunction(PVOID hModule, const char* funcName)
     if (pExport->NumberOfNames == 0 || pExport->NumberOfFunctions == 0)
         return NULL;
     WORD* ordinal = (WORD*)((size_t)pDest + pExport->AddressOfNameOrdinals);
-    if ((DWORD)funcName < 0x10000)
+    if ((size_t)funcName < 0x10000)
     {
-        if ((DWORD)funcName >= pExport->NumberOfFunctions + pExport->Base || (DWORD)funcName < pExport->Base)
+        if ((size_t)funcName >= pExport->NumberOfFunctions + pExport->Base || (size_t)funcName < pExport->Base)
             return NULL;
-        idx = (size_t)pDest + ((DWORD*)((size_t)pDest + pExport->AddressOfFunctions))[(DWORD)funcName - pExport->Base];
+        idx = (size_t)pDest + ((DWORD*)((size_t)pDest + pExport->AddressOfFunctions))[(size_t)funcName - pExport->Base];
     }
     else
     {
