@@ -26,8 +26,8 @@ jobs:
               $v = $_.split("="); set-item -force -path "ENV:\$($v[0])"  -value "$($v[1])"
             }
           }
-          msbuild .\out\Windows-Native.sln /t:restore /p:RestorePackagesConfig=true
-          msbuild .\out\Windows-Native.sln /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.platform }}
+          msbuild .\out\Windows-Native.sln -m /t:restore /p:RestorePackagesConfig=true
+          msbuild .\out\Windows-Native.sln -m /p:Configuration=${{ matrix.config }} /p:Platform=${{ matrix.platform }}
       - name: Test
         run: .\out\bin\${{ matrix.platform }}\Test*.exe --gtest_color=no --gtest_output=xml:.\tests\results-${{ matrix.platform }}-${{ matrix.config }}.xml
       - name: Convert Gtest to JUnit

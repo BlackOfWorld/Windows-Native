@@ -414,8 +414,7 @@ BOOL File_Delete(LPCWSTR path)
     IO_STATUS_BLOCK io_file = {0};
     UNICODE_STRING ntPath;
     Path.RtlDosPathNameToNtPathName_U(path, &ntPath, NULL, NULL);
-    InitializeObjectAttributes(&obj_file, NULL, OBJ_CASE_INSENSITIVE, NULL, NULL);
-    obj_file.ObjectName = &ntPath;
+    InitializeObjectAttributes(&obj_file, &ntPath, OBJ_CASE_INSENSITIVE, NULL, NULL);
     HANDLE hFile;
     NTSTATUS ret = NtCreateFile(&hFile, DELETE, &obj_file, &io_file, NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, 0, NULL, 0);
     if(NT_ERROR(ret))

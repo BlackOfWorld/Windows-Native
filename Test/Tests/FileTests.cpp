@@ -45,7 +45,7 @@ TEST(File, Size)
 TEST(File, Delete)
 {
      EXPECT_EQ(NativeLib.File.Delete(L"TestFile.txt"), true);
-     HANDLE hFile = NativeLib.File.Create(L"TestFile.txt", FILE_GENERIC_READ, FILE_SHARE_READ, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL);
+     HANDLE hFile = NativeLib.File.Create(L"TestFile.txt", FILE_GENERIC_READ, FILE_SHARE_DELETE, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL);
      EXPECT_EQ(NativeLib.File.Delete(L"TestFile.txt"), true);
      EXPECT_EQ(NativeLib.File.Close(hFile), true);
  }
