@@ -390,6 +390,7 @@ typedef DWORD NTSTATUS;
 #define STATUS_INVALID_HANDLE             ((DWORD)0xC0000008L)
 #define STATUS_INVALID_PARAMETER          ((DWORD)0xC000000DL)
 #define STATUS_NO_SUCH_FILE               ((DWORD)0xC000000FL)
+#define STATUS_END_OF_FILE                ((DWORD)0xC00000011)
 #define STATUS_BUFFER_TOO_SMALL           ((DWORD)0xC0000023L)
 #define STATUS_INVALID_PAGE_PROTECTION    ((DWORD)0xC0000045L)
 #define STATUS_NO_MEMORY                  ((DWORD)0xC0000017L)
@@ -2722,8 +2723,8 @@ inline unsigned udc(unsigned u) //unsigned digit count
     while ((u /= 10) != 0);
     return c;
 }
-extern void itoa(char* buf, uint32_t val);
-extern void itow(wchar_t* buf, uint32_t val);
+extern void itoa(char* buf, uint64_t val);
+extern void itow(wchar_t* buf, uint64_t val);
 #define NtCurrentProcess()   ((HANDLE)(LONG_PTR)-1)
 #define NtCurrentThread()    ((HANDLE)(LONG_PTR)-2)
 #define NtGetPid()           NtGetTeb()->ClientId.UniqueProcess /* GetCurrentProcessId() */
@@ -2736,8 +2737,10 @@ extern void itow(wchar_t* buf, uint32_t val);
 
 #define STRINGIZE_(x) #x
 #define STRINGIZE(x) STRINGIZE_(x)
-#define WIDE_(s) L###s
-#define WIDE(s) WIDE_(s)
+#define WIDE1_(s) L###s
+#define WIDE1(s) WIDE1_(s)
+#define WIDE2_(s) L##s
+#define WIDE2(s) WIDE2_(s)
 #define CONCATENATE_(a, b) a ## b
 #define CONCATENATE(a, b)  CONCATENATE_(a, b)
 
@@ -2748,7 +2751,13 @@ extern PTEB NtGetTeb(void);
 extern inline PPEB NtGetPeb(void);
 
 extern void cpu_detect_features(void);
-extern NTSTATUS(NTAPI* NtClose)(HANDLE Handle);
+typedef enum _OBJECT_INFORMATION_CLASS {
+    ObjectBasicInformation,
+    ObjectNameInformation,
+    ObjectTypeInformation,
+    ObjectAllInformation,
+    ObjectDataInformation
+} OBJECT_INFORMATION_CLASS, * POBJECT_INFORMATION_CLASS;
 extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);
 
 extern NTSTATUS(NTAPI* NtClose)(HANDLE Handle);

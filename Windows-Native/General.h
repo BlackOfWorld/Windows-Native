@@ -44,9 +44,11 @@ struct Library
 struct File
 {
     HANDLE(*Create)(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes);
-    BOOLEAN(*Write)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, PVOID lpOverlapped);
+    BOOLEAN(*Write)(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, PLONGLONG lpNumberOfBytesWritten, PVOID lpOverlapped);
+    BOOLEAN(*Read)(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED overlapped);
     UINT64(*Size)(HANDLE hFile);
     BOOL(*Close)(HANDLE hFile);
+    BOOL(*Delete)(LPCWSTR path);
 };
 struct nativeLib
 {

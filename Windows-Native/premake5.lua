@@ -7,6 +7,10 @@ project("LibWindowsNative")
   floatingpointexceptions("Off")
   intrinsics("on")
   linkoptions {"/NODEFAULTLIB"}
+
+  filter { "toolset:msc*" }
+    disablewarnings { "4312" }
+
   flags({
     "NoBufferSecurityCheck"
   })

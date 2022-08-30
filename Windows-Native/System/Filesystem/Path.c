@@ -1,7 +1,6 @@
 ﻿#include "Path.h"
 
 
-//THIS FUCKS UP THE STACK!!
 NTSTATUS RtlDosSearchPath_Ustr(
     ULONG Flags,
     PUNICODE_STRING PathString,

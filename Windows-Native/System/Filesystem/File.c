@@ -13,6 +13,10 @@
 #define OPEN_ALWAYS                             4
 #define TRUNCATE_EXISTING                       5
 
+#define FILE_SHARE_READ                 0x00000001
+#define FILE_SHARE_WRITE                0x00000002
+#define FILE_SHARE_DELETE               0x00000004
+
 #define FILE_DIRECTORY_FILE                     0x00000001
 #define FILE_WRITE_THROUGH                      0x00000002
 #define FILE_SEQUENTIAL_ONLY                    0x00000004
@@ -66,12 +70,14 @@
 #define FILE_ATTRIBUTE_VALID_FLAGS              0x00007fb7
 #define FILE_ATTRIBUTE_VALID_SET_FLAGS          0x000031a7
 #define FILE_ATTRIBUTE_DIRECTORY                0x00000010
+#define FILE_ATTRIBUTE_NORMAL                   0x00000080
 #define FILE_READ_ATTRIBUTES                    0x0080
+
 
 #define OBJ_CASE_INSENSITIVE   0x00000040L
 
 
-
+typedef void (IO_APC_ROUTINE)(void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, unsigned long reserved);
 static NTSTATUS(NTAPI* NtQueryInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass) = NULL;
 
 HANDLE File_Create(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD CreationDisposition, DWORD FlagsAndAttributes)
@@ -191,10 +197,9 @@ HANDLE File_Create(LPCWSTR fileName, DWORD Access, DWORD ShareMode, DWORD Creati
 
     return FileHandle;
 }
-BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, LPDWORD lpNumberOfBytesWritten, PVOID lpOverlapped)
+BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, PLONGLONG lpNumberOfBytesWritten, PVOID lpOverlapped)
 {
     LPOVERLAPPED overlapped = lpOverlapped;
-    typedef void (IO_APC_ROUTINE)(void* ApcContext, IO_STATUS_BLOCK* IoStatusBlock, unsigned long    reserved);
     static NTSTATUS(NTAPI * NtWriteFile)(HANDLE FileHandle, HANDLE Event, IO_APC_ROUTINE * ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key);
     if (!NtWriteFile) NtWriteFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtWriteFile");
 
@@ -214,10 +219,10 @@ BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, 
 
     if (overlapped != NULL)
     {
-        ULARGE_INTEGER offset =
+        LARGE_INTEGER offset =
         {
             .LowPart = overlapped->Offset,
-            .HighPart = overlapped->OffsetHigh
+            .HighPart = (LONG)overlapped->OffsetHigh
         };
 
         overlapped->Internal = STATUS_PENDING;
@@ -256,6 +261,8 @@ BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, 
             NULL,
             NULL);
 
+        SetLastNTError(status);
+
         /* Wait in case operation is pending */
         if (status == STATUS_PENDING)
         {
@@ -270,14 +277,119 @@ BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, 
             if (lpNumberOfBytesWritten)
                 *lpNumberOfBytesWritten = ioStatusBlock.Information;
         }
-        SetLastNTError(status);
+        else return FALSE;
+
+        return TRUE;
+    }
+    return TRUE;
+}
+BOOLEAN File_Read(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED overlapped)
+{
+    static NTSTATUS(NTAPI* NtReadFile)(HANDLE FileHandle, HANDLE Event, IO_APC_ROUTINE* ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key);
+    if(!NtReadFile) NtReadFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtReadFile");
+    NTSTATUS status;
+    if (lpNumberOfBytesRead != NULL)
+        *lpNumberOfBytesRead = 0;
+
+    switch ((size_t)hFile)
+    {
+    case STD_ERROR_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardError;
+        break;
+    case STD_OUTPUT_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardOutput;
+        break;
+    case STD_INPUT_HANDLE:
+        hFile = NtGetPeb()->ProcessParameters->StandardInput;
+        break;
+    default: break;
+    }
+
+#if 0
+    hFile = TranslateStdHandle(hFile);
+    if (IsConsoleHandle(hFile))
+    {
+        if (ReadConsoleA(hFile,
+            lpBuffer,
+            nNumberOfBytesToRead,
+            lpNumberOfBytesRead,
+            NULL))
+        {
+            DWORD dwMode;
+            GetConsoleMode(hFile, &dwMode);
+            if ((dwMode & ENABLE_PROCESSED_INPUT) && *(PCHAR)lpBuffer == 0x1a)
+            {
+                /* EOF character entered; simulate end-of-file */
+                *lpNumberOfBytesRead = 0;
+            }
+            return TRUE;
+        }
         return FALSE;
     }
-}
+#endif
+    if (overlapped != NULL)
+    {
+        LARGE_INTEGER offset =
+        {
+            .LowPart = overlapped->Offset,
+            .HighPart = (LONG)overlapped->OffsetHigh
+        };
+        overlapped->Internal = STATUS_PENDING;
+        PVOID ApcContext = (((ULONG_PTR)overlapped->hEvent & 0x1) ? NULL : overlapped);
+        status = NtReadFile(hFile,
+            overlapped->hEvent,
+            NULL,
+            ApcContext,
+            (PIO_STATUS_BLOCK)overlapped,
+            lpBuffer,
+            nNumberOfBytesToRead,
+            &offset,
+            NULL);
+        SetLastNTError(status);
+        if (!NT_SUCCESS(status) || status == STATUS_PENDING)
+        {
+            if (status == STATUS_END_OF_FILE && lpNumberOfBytesRead != NULL)
+                *lpNumberOfBytesRead = 0;
+            return FALSE;
+        }
+        if (lpNumberOfBytesRead != NULL)
+            *lpNumberOfBytesRead = overlapped->InternalHigh;
+    }
+    else
+    {
+        IO_STATUS_BLOCK ioStatusBlock;
+        status = NtReadFile(hFile,
+            NULL,
+            NULL,
+            NULL,
+            &ioStatusBlock,
+            lpBuffer,
+            nNumberOfBytesToRead,
+            NULL,
+            NULL);
+        SetLastNTError(status);
 
-BOOLEAN File_Read(HANDLE hFile)
-{
-
+        /* Wait in case operation is pending */
+        if (status == STATUS_PENDING)
+        {
+            status = NtWaitForSingleObject(hFile, FALSE, NULL);
+            if (NT_SUCCESS(status)) status = ioStatusBlock.Status;
+        }
+        if (status == STATUS_END_OF_FILE)
+        {
+            // Here's another fun fact, where Windows would normally crash here :P
+            if (lpNumberOfBytesRead) *lpNumberOfBytesRead = 0;
+            return TRUE;
+        }
+        if (NT_SUCCESS(status))
+        {
+            // Here's another...
+            if (lpNumberOfBytesRead) *lpNumberOfBytesRead = ioStatusBlock.Information;
+            return TRUE;
+        }
+        return FALSE;
+    }
+    return TRUE;
 }
 UINT64 File_GetSize(HANDLE hFile)
 {
@@ -290,6 +402,33 @@ UINT64 File_GetSize(HANDLE hFile)
 
     return NT_ERROR(errCode) ? INVALID_FILE_SIZE : FileStandard.EndOfFile.QuadPart;
 }
+BOOL File_Delete(LPCWSTR path)
+{
+    static NTSTATUS(NTAPI* NtSetInformationFile)(HANDLE FileHandle, PIO_STATUS_BLOCK IoStatusBlock, PVOID FileInformation, ULONG Length, FILE_INFORMATION_CLASS FileInformationClass);
+    if (!NtSetInformationFile) NtSetInformationFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtSetInformationFile");
+    static NTSTATUS(NTAPI * NtCreateFile)(PHANDLE FileHandle, ACCESS_MASK DesiredAccess, POBJECT_ATTRIBUTES ObjectAttributes, PIO_STATUS_BLOCK IoStatusBlock, PLARGE_INTEGER AllocationSize, ULONG FileAttributes, ULONG ShareAccess, ULONG CreateDisposition, ULONG CreateOptions, PVOID EaBuffer, ULONG EaLength);
+    if (!NtCreateFile) NtCreateFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtCreateFile");
+    static NTSTATUS(NTAPI * NtDeleteFile)(POBJECT_ATTRIBUTES   ObjectAttributes);
+    if (!NtDeleteFile) NtDeleteFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtDeleteFile");
+    OBJECT_ATTRIBUTES obj_file = {0};
+    IO_STATUS_BLOCK io_file = {0};
+    UNICODE_STRING ntPath;
+    Path.RtlDosPathNameToNtPathName_U(path, &ntPath, NULL, NULL);
+    InitializeObjectAttributes(&obj_file, NULL, OBJ_CASE_INSENSITIVE, NULL, NULL);
+    obj_file.ObjectName = &ntPath;
+    HANDLE hFile;
+    NTSTATUS ret = NtCreateFile(&hFile, DELETE, &obj_file, &io_file, NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, 0, NULL, 0);
+    if(NT_ERROR(ret))
+    {
+        ret = NtDeleteFile(&obj_file);
+        return NT_SUCCESS(ret);
+    }
+    BOOLEAN disp_info = TRUE;
+    ret = NtSetInformationFile(hFile, &io_file, &disp_info,
+        sizeof(disp_info), FileDispositionInformation);
+    File.Close(hFile);
+    return NT_SUCCESS(ret);
+}
 BOOL File_Close(HANDLE hFile)
 {
     NTSTATUS status = NtClose(hFile);
@@ -299,6 +438,8 @@ BOOL File_Close(HANDLE hFile)
 struct File File = {
     .Create = &File_Create,
     .Write = &File_Write,
+    .Read = &File_Read,
     .Size = &File_GetSize,
     .Close = &File_Close,
+    .Delete = &File_Delete
 };
