@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
 
     const auto testResult = RUN_ALL_TESTS();
 
-    if (hIn != INVALID_HANDLE_VALUE)
+    if (hOut != INVALID_HANDLE_VALUE)
         SetConsoleMode(hOut, dwModeOut);
     if (hIn != INVALID_HANDLE_VALUE)
         SetConsoleMode(hIn, dwModeIn);

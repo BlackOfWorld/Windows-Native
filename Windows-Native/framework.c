@@ -120,6 +120,22 @@ VOID NTAPI RtlCopyUnicodeString(PUNICODE_STRING DestinationString,
   }
 }
 
+void _internal_ito(PCHAR buf, uint64_t val, unsigned shift)
+{
+    *buf = 0;
+    do {
+        uint64_t n0 = val;
+        *((uint64_t*)buf) = (*((uint64_t*)buf) << shift) | (n0 + L'0' - (val /= 10) * 10);
+    } while (val);
+}
+void itoa(char* buf, uint32_t val)
+{
+    _internal_ito(buf, val, 8);
+}
+void itow(wchar_t* buf, uint64_t val)
+{
+    _internal_ito((PCHAR)buf, val, 16);
+}
 static ULONG RtlNtStatusToDosError(NTSTATUS status)
 {
 #if USE_ERRORS_FROM_NTDLL
