@@ -1,78 +1,6 @@
 #include "File.h"
 
 #include "Path.h"
-#define INVALID_FILE_SIZE                0xFFFFFFFF
-#define ERROR_FILE_NOT_FOUND             2L
-#define ERROR_FILE_EXISTS                80L
-#define ERROR_ALREADY_EXISTS             183L
-
-#define ERROR_PATH_NOT_FOUND                    3
-#define CREATE_NEW                              1
-#define CREATE_ALWAYS                           2
-#define OPEN_EXISTING                           3
-#define OPEN_ALWAYS                             4
-#define TRUNCATE_EXISTING                       5
-
-#define FILE_SHARE_READ                 0x00000001
-#define FILE_SHARE_WRITE                0x00000002
-#define FILE_SHARE_DELETE               0x00000004
-
-#define FILE_DIRECTORY_FILE                     0x00000001
-#define FILE_WRITE_THROUGH                      0x00000002
-#define FILE_SEQUENTIAL_ONLY                    0x00000004
-#define FILE_NO_INTERMEDIATE_BUFFERING          0x00000008
-#define FILE_SYNCHRONOUS_IO_ALERT               0x00000010
-#define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
-#define FILE_NON_DIRECTORY_FILE                 0x00000040
-#define FILE_CREATE_TREE_CONNECTION             0x00000080
-#define FILE_COMPLETE_IF_OPLOCKED               0x00000100
-#define FILE_NO_EA_KNOWLEDGE                    0x00000200
-#define FILE_OPEN_REMOTE_INSTANCE               0x00000400
-#define FILE_RANDOM_ACCESS                      0x00000800
-#define FILE_DELETE_ON_CLOSE                    0x00001000
-#define FILE_OPEN_BY_FILE_ID                    0x00002000
-#define FILE_OPEN_FOR_BACKUP_INTENT             0x00004000
-#define FILE_NO_COMPRESSION                     0x00008000
-#define FILE_RESERVE_OPFILTER                   0x00100000
-#define FILE_OPEN_REPARSE_POINT                 0x00200000
-#define FILE_OPEN_NO_RECALL                     0x00400000
-#define FILE_OPEN_FOR_FREE_SPACE_QUERY          0x00800000
-#define FILE_COPY_STRUCTURED_STORAGE            0x00000041
-#define FILE_STRUCTURED_STORAGE                 0x00000441
-
-#define FILE_SUPERSEDE                          0x00000000
-#define FILE_OPEN                               0x00000001
-#define FILE_CREATE                             0x00000002
-#define FILE_OPEN_IF                            0x00000003
-#define FILE_OVERWRITE                          0x00000004
-#define FILE_OVERWRITE_IF                       0x00000005
-#define FILE_MAXIMUM_DISPOSITION                0x00000005
-
-#define FILE_SUPERSEDED                         0x00000000
-#define FILE_OPENED                             0x00000001
-#define FILE_CREATED                            0x00000002
-#define FILE_OVERWRITTEN                        0x00000003
-#define FILE_EXISTS                             0x00000004
-#define FILE_DOES_NOT_EXIST                     0x00000005
-
-#define FILE_FLAG_WRITE_THROUGH                 0x80000000
-#define FILE_FLAG_OVERLAPPED                    0x40000000
-#define FILE_FLAG_NO_BUFFERING                  0x20000000
-#define FILE_FLAG_RANDOM_ACCESS                 0x10000000
-#define FILE_FLAG_SEQUENTIAL_SCAN               0x08000000
-#define FILE_FLAG_DELETE_ON_CLOSE               0x04000000
-#define FILE_FLAG_BACKUP_SEMANTICS              0x02000000
-#define FILE_FLAG_POSIX_SEMANTICS               0x01000000
-#define FILE_FLAG_SESSION_AWARE                 0x00800000
-#define FILE_FLAG_OPEN_REPARSE_POINT            0x00200000
-#define FILE_FLAG_OPEN_NO_RECALL                0x00100000
-#define FILE_FLAG_FIRST_PIPE_INSTANCE           0x00080000
-#define FILE_ATTRIBUTE_VALID_FLAGS              0x00007fb7
-#define FILE_ATTRIBUTE_VALID_SET_FLAGS          0x000031a7
-#define FILE_ATTRIBUTE_DIRECTORY                0x00000010
-#define FILE_ATTRIBUTE_NORMAL                   0x00000080
-#define FILE_READ_ATTRIBUTES                    0x0080
-
 
 #define OBJ_CASE_INSENSITIVE   0x00000040L
 
@@ -285,9 +213,9 @@ BOOLEAN File_Write(HANDLE hFile, LPCVOID lpBuffer, DWORD nNumberOfBytesToWrite, 
 }
 BOOLEAN File_Read(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED overlapped)
 {
+    NTSTATUS status;
     static NTSTATUS(NTAPI* NtReadFile)(HANDLE FileHandle, HANDLE Event, IO_APC_ROUTINE* ApcRoutine, PVOID ApcContext, PIO_STATUS_BLOCK IoStatusBlock, PVOID Buffer, ULONG Length, PLARGE_INTEGER ByteOffset, PULONG Key);
     if(!NtReadFile) NtReadFile = NativeLib.Library.GetModuleFunction(L"ntdll.dll", "NtReadFile");
-    NTSTATUS status;
     if (lpNumberOfBytesRead != NULL)
         *lpNumberOfBytesRead = 0;
 
@@ -417,14 +345,20 @@ BOOL File_Delete(LPCWSTR path)
     InitializeObjectAttributes(&obj_file, &ntPath, OBJ_CASE_INSENSITIVE, NULL, NULL);
     HANDLE hFile;
     NTSTATUS ret = NtCreateFile(&hFile, DELETE, &obj_file, &io_file, NULL, FILE_ATTRIBUTE_NORMAL, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, FILE_OPEN, 0, NULL, 0);
+
+    // could not get handle, call and pray
     if(NT_ERROR(ret))
     {
         ret = NtDeleteFile(&obj_file);
         return NT_SUCCESS(ret);
     }
+
     BOOLEAN disp_info = TRUE;
     ret = NtSetInformationFile(hFile, &io_file, &disp_info,
         sizeof(disp_info), FileDispositionInformation);
+
+    NtDeleteFile(&obj_file);
+
     File.Close(hFile);
     return NT_SUCCESS(ret);
 }
