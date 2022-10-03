@@ -1,6 +1,20 @@
 ﻿#include "Path.h"
 
 
+LPWSTR PathFindFileNameW(LPWSTR lpszPath)
+{
+    LPWSTR lastSlash = lpszPath;
+
+    while (lpszPath && *lpszPath)
+    {
+        if ((*lpszPath == '\\' || *lpszPath == '/' || *lpszPath == ':') &&
+            lpszPath[1] && lpszPath[1] != '\\' && lpszPath[1] != '/')
+            lastSlash = lpszPath + 1;
+        lpszPath++;
+    }
+    return lastSlash;
+}
+
 NTSTATUS RtlDosSearchPath_Ustr(
     ULONG Flags,
     PUNICODE_STRING PathString,
@@ -152,6 +166,7 @@ SIZE_T SearchPathW(LPCWSTR lpPath, LPCWSTR lpFileName, LPCWSTR lpExtension, DWOR
     return Result;
 }
 struct Path Path = {
+    .PathFindFileNameW = &PathFindFileNameW,
     .RtlDosPathNameToNtPathName_U = &RtlDosPathNameToNtPathName_U,
     .RtlDosSearchPath_Ustr = &RtlDosSearchPath_Ustr,
     .RtlGetExePath = &RtlGetExePath,

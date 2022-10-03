@@ -16,6 +16,7 @@ typedef struct _RTL_RELATIVE_NAME_U
 } RTL_RELATIVE_NAME_U, * PRTL_RELATIVE_NAME_U;
 struct Path
 {
+    LPWSTR(*PathFindFileNameW)(LPWSTR lpszPath);
     NTSTATUS(*RtlDosSearchPath_Ustr)(ULONG Flags,PUNICODE_STRING PathString,PUNICODE_STRING FileNameString,PUNICODE_STRING ExtensionString,PUNICODE_STRING CallerBuffer,PUNICODE_STRING DynamicString,PUNICODE_STRING* FullNameOut,PSIZE_T FilePartSize,PSIZE_T LengthNeeded);
     NTSTATUS(*RtlDosPathNameToNtPathName_U)(PCWSTR DosFileName, PUNICODE_STRING NtFileName, PWSTR* FilePart, PRTL_RELATIVE_NAME_U RelativeName);
     NTSTATUS(*RtlGetExePath)(PCWSTR name, PWSTR* path);

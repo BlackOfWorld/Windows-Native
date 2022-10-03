@@ -10,12 +10,15 @@ extern void NativeInit(void);
 struct Memory
 {
     PVOID(*AllocateHeap)(DWORD uSize, BOOL zeroMem);
+    BOOL(*ProtectVirtual)(LPVOID lpAddress, SIZE_T dwSize, DWORD  flNewProtect, PDWORD lpflOldProtect);
+    PVOID(*AllocateVirtual2)(PVOID address, size_t dwSize, DWORD AllocFlags, DWORD Protect);
     PVOID(*AllocateVirtual)(size_t dwSize, DWORD AllocFlags, DWORD Protect);
     PVOID(*ReAllocHeap)(PVOID Address, DWORD dwSize, BOOL zeroMem);
     PVOID(*GetCurrentHeap)(void);
     DWORD(*GetCurrentHeaps)(void);
     BOOLEAN(*FreeHeap)(PVOID Address);
     BOOLEAN(*FreeVirtual)(PVOID Address, SIZE_T dwSize, DWORD FreeType);
+    BOOL(*FlushInstructionCache)(HANDLE hProcess, LPCVOID lpBaseAddress, SIZE_T dwSize);
 };
 
 struct CurrentProcess

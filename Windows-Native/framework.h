@@ -4,6 +4,12 @@
 #error "This architecture is currently unsupported"
 #endif
 #include <intrin.h>
+#if defined _MSC_VER
+#define offsetof(s,m) ((size_t)&(((s*)0)->m))
+#else
+#define offsetof(s,m) __builtin_offsetof(s,m)
+#endif
+
 #if defined(_DEBUG)
 #define assert(expression, ...) (void)(                                                       \
             (!!(expression)) ||                                                              \
@@ -354,6 +360,83 @@ typedef KSPIN_LOCK* PKSPIN_LOCK;
 
 typedef DWORD NTSTATUS;
 
+
+#define INVALID_FILE_SIZE                0xFFFFFFFF
+#define ERROR_FILE_NOT_FOUND             2L
+#define ERROR_FILE_EXISTS                80L
+#define ERROR_ALREADY_EXISTS             183L
+
+#define FILE_GENERIC_READ 0x120089
+#define FILE_GENERIC_WRITE 0x120116
+#define FILE_GENERIC_EXECUTE 0x1200a0
+
+#define ERROR_PATH_NOT_FOUND                    3
+#define CREATE_NEW                              1
+#define CREATE_ALWAYS                           2
+#define OPEN_EXISTING                           3
+#define OPEN_ALWAYS                             4
+#define TRUNCATE_EXISTING                       5
+
+#define FILE_SHARE_READ                 0x00000001
+#define FILE_SHARE_WRITE                0x00000002
+#define FILE_SHARE_DELETE               0x00000004
+
+#define FILE_DIRECTORY_FILE                     0x00000001
+#define FILE_WRITE_THROUGH                      0x00000002
+#define FILE_SEQUENTIAL_ONLY                    0x00000004
+#define FILE_NO_INTERMEDIATE_BUFFERING          0x00000008
+#define FILE_SYNCHRONOUS_IO_ALERT               0x00000010
+#define FILE_SYNCHRONOUS_IO_NONALERT            0x00000020
+#define FILE_NON_DIRECTORY_FILE                 0x00000040
+#define FILE_CREATE_TREE_CONNECTION             0x00000080
+#define FILE_COMPLETE_IF_OPLOCKED               0x00000100
+#define FILE_NO_EA_KNOWLEDGE                    0x00000200
+#define FILE_OPEN_REMOTE_INSTANCE               0x00000400
+#define FILE_RANDOM_ACCESS                      0x00000800
+#define FILE_DELETE_ON_CLOSE                    0x00001000
+#define FILE_OPEN_BY_FILE_ID                    0x00002000
+#define FILE_OPEN_FOR_BACKUP_INTENT             0x00004000
+#define FILE_NO_COMPRESSION                     0x00008000
+#define FILE_RESERVE_OPFILTER                   0x00100000
+#define FILE_OPEN_REPARSE_POINT                 0x00200000
+#define FILE_OPEN_NO_RECALL                     0x00400000
+#define FILE_OPEN_FOR_FREE_SPACE_QUERY          0x00800000
+#define FILE_COPY_STRUCTURED_STORAGE            0x00000041
+#define FILE_STRUCTURED_STORAGE                 0x00000441
+
+#define FILE_SUPERSEDE                          0x00000000
+#define FILE_OPEN                               0x00000001
+#define FILE_CREATE                             0x00000002
+#define FILE_OPEN_IF                            0x00000003
+#define FILE_OVERWRITE                          0x00000004
+#define FILE_OVERWRITE_IF                       0x00000005
+#define FILE_MAXIMUM_DISPOSITION                0x00000005
+
+#define FILE_SUPERSEDED                         0x00000000
+#define FILE_OPENED                             0x00000001
+#define FILE_CREATED                            0x00000002
+#define FILE_OVERWRITTEN                        0x00000003
+#define FILE_EXISTS                             0x00000004
+#define FILE_DOES_NOT_EXIST                     0x00000005
+
+#define FILE_FLAG_WRITE_THROUGH                 0x80000000
+#define FILE_FLAG_OVERLAPPED                    0x40000000
+#define FILE_FLAG_NO_BUFFERING                  0x20000000
+#define FILE_FLAG_RANDOM_ACCESS                 0x10000000
+#define FILE_FLAG_SEQUENTIAL_SCAN               0x08000000
+#define FILE_FLAG_DELETE_ON_CLOSE               0x04000000
+#define FILE_FLAG_BACKUP_SEMANTICS              0x02000000
+#define FILE_FLAG_POSIX_SEMANTICS               0x01000000
+#define FILE_FLAG_SESSION_AWARE                 0x00800000
+#define FILE_FLAG_OPEN_REPARSE_POINT            0x00200000
+#define FILE_FLAG_OPEN_NO_RECALL                0x00100000
+#define FILE_FLAG_FIRST_PIPE_INSTANCE           0x00080000
+#define FILE_ATTRIBUTE_VALID_FLAGS              0x00007fb7
+#define FILE_ATTRIBUTE_VALID_SET_FLAGS          0x000031a7
+#define FILE_ATTRIBUTE_DIRECTORY                0x00000010
+#define FILE_ATTRIBUTE_NORMAL                   0x00000080
+#define FILE_READ_ATTRIBUTES                    0x0080
+
 //error codes
 #define ERROR_SUCCESS                     0L
 
@@ -568,8 +651,10 @@ typedef struct _LARGE_INTEGER
     };
 } LARGE_INTEGER, * PLARGE_INTEGER;
 
-
-
+#define RtlInitializeListEntry(entry) ((entry)->Blink = (entry)->Flink = (entry))
+typedef struct _SINGLE_LIST_ENTRY {
+    struct _SINGLE_LIST_ENTRY* Next;
+} SINGLE_LIST_ENTRY, * PSINGLE_LIST_ENTRY;
 typedef struct _LIST_ENTRY {
     struct _LIST_ENTRY* Flink;
     struct _LIST_ENTRY* Blink;
@@ -608,38 +693,230 @@ typedef struct _ACTIVATION_CONTEXT
     struct guidsection_header* clrsurrogate_section;
 } ACTIVATION_CONTEXT;
 
-typedef struct _LDR_DATA_TABLE_ENTRY
+
+//
+// Section characteristics.
+//
+//      IMAGE_SCN_TYPE_REG                   0x00000000  // Reserved.
+//      IMAGE_SCN_TYPE_DSECT                 0x00000001  // Reserved.
+//      IMAGE_SCN_TYPE_NOLOAD                0x00000002  // Reserved.
+//      IMAGE_SCN_TYPE_GROUP                 0x00000004  // Reserved.
+#define IMAGE_SCN_TYPE_NO_PAD                0x00000008  // Reserved.
+//      IMAGE_SCN_TYPE_COPY                  0x00000010  // Reserved.
+
+#define IMAGE_SCN_CNT_CODE                   0x00000020  // Section contains code.
+#define IMAGE_SCN_CNT_INITIALIZED_DATA       0x00000040  // Section contains initialized data.
+#define IMAGE_SCN_CNT_UNINITIALIZED_DATA     0x00000080  // Section contains uninitialized data.
+
+#define IMAGE_SCN_LNK_OTHER                  0x00000100  // Reserved.
+#define IMAGE_SCN_LNK_INFO                   0x00000200  // Section contains comments or some other type of information.
+//      IMAGE_SCN_TYPE_OVER                  0x00000400  // Reserved.
+#define IMAGE_SCN_LNK_REMOVE                 0x00000800  // Section contents will not become part of image.
+#define IMAGE_SCN_LNK_COMDAT                 0x00001000  // Section contents comdat.
+//                                           0x00002000  // Reserved.
+//      IMAGE_SCN_MEM_PROTECTED - Obsolete   0x00004000
+#define IMAGE_SCN_NO_DEFER_SPEC_EXC          0x00004000  // Reset speculative exceptions handling bits in the TLB entries for this section.
+#define IMAGE_SCN_GPREL                      0x00008000  // Section content can be accessed relative to GP
+#define IMAGE_SCN_MEM_FARDATA                0x00008000
+//      IMAGE_SCN_MEM_SYSHEAP  - Obsolete    0x00010000
+#define IMAGE_SCN_MEM_PURGEABLE              0x00020000
+#define IMAGE_SCN_MEM_16BIT                  0x00020000
+#define IMAGE_SCN_MEM_LOCKED                 0x00040000
+#define IMAGE_SCN_MEM_PRELOAD                0x00080000
+
+#define IMAGE_SCN_ALIGN_1BYTES               0x00100000  //
+#define IMAGE_SCN_ALIGN_2BYTES               0x00200000  //
+#define IMAGE_SCN_ALIGN_4BYTES               0x00300000  //
+#define IMAGE_SCN_ALIGN_8BYTES               0x00400000  //
+#define IMAGE_SCN_ALIGN_16BYTES              0x00500000  // Default alignment if no others are specified.
+#define IMAGE_SCN_ALIGN_32BYTES              0x00600000  //
+#define IMAGE_SCN_ALIGN_64BYTES              0x00700000  //
+#define IMAGE_SCN_ALIGN_128BYTES             0x00800000  //
+#define IMAGE_SCN_ALIGN_256BYTES             0x00900000  //
+#define IMAGE_SCN_ALIGN_512BYTES             0x00A00000  //
+#define IMAGE_SCN_ALIGN_1024BYTES            0x00B00000  //
+#define IMAGE_SCN_ALIGN_2048BYTES            0x00C00000  //
+#define IMAGE_SCN_ALIGN_4096BYTES            0x00D00000  //
+#define IMAGE_SCN_ALIGN_8192BYTES            0x00E00000  //
+// Unused                                    0x00F00000
+#define IMAGE_SCN_ALIGN_MASK                 0x00F00000
+
+#define IMAGE_SCN_LNK_NRELOC_OVFL            0x01000000  // Section contains extended relocations.
+#define IMAGE_SCN_MEM_DISCARDABLE            0x02000000  // Section can be discarded.
+#define IMAGE_SCN_MEM_NOT_CACHED             0x04000000  // Section is not cachable.
+#define IMAGE_SCN_MEM_NOT_PAGED              0x08000000  // Section is not pageable.
+#define IMAGE_SCN_MEM_SHARED                 0x10000000  // Section is shareable.
+#define IMAGE_SCN_MEM_EXECUTE                0x20000000  // Section is executable.
+#define IMAGE_SCN_MEM_READ                   0x40000000  // Section is readable.
+#define IMAGE_SCN_MEM_WRITE                  0x80000000  // Section is writeable.
+
+#define DLL_PROCESS_ATTACH   1
+#define DLL_THREAD_ATTACH    2
+#define DLL_THREAD_DETACH    3
+#define DLL_PROCESS_DETACH   0
+
+typedef enum _LDR_DLL_LOAD_REASON
 {
-    LIST_ENTRY            InLoadOrderLinks;                /* 0x00 */
-    LIST_ENTRY            InMemoryOrderLinks;                /* 0x10 */
-    LIST_ENTRY            InInitializationOrderLinks;        /* 0x20 */
-    void* DllBase;                        /* 0x30 */
-    void* EntryPoint;                        /* 0x38 */
-    unsigned long        SizeOfImage;                    /* 0x40 */
-    UNICODE_STRING        FullDllName;                    /* 0x48 */
-    UNICODE_STRING        BaseDllName;                    /* 0x58 */
-    unsigned long Flags;
-    unsigned short LoadCount;
-    unsigned short TlsIndex;
+    LoadReasonStaticDependency,
+    LoadReasonStaticForwarderDependency,
+    LoadReasonDynamicForwarderDependency,
+    LoadReasonDelayloadDependency,
+    LoadReasonDynamicLoad,
+    LoadReasonAsImageLoad,
+    LoadReasonAsDataLoad,
+    LoadReasonEnclavePrimary, // REDSTONE3
+    LoadReasonEnclaveDependency,
+    LoadReasonUnknown = -1
+} LDR_DLL_LOAD_REASON, * PLDR_DLL_LOAD_REASON;
+
+typedef enum _LDR_DDAG_STATE
+{
+    LdrModulesMerged = -5,
+    LdrModulesInitError = -4,
+    LdrModulesSnapError = -3,
+    LdrModulesUnloaded = -2,
+    LdrModulesUnloading = -1,
+    LdrModulesPlaceHolder = 0,
+    LdrModulesMapping = 1,
+    LdrModulesMapped = 2,
+    LdrModulesWaitingForDependencies = 3,
+    LdrModulesSnapping = 4,
+    LdrModulesSnapped = 5,
+    LdrModulesCondensed = 6,
+    LdrModulesReadyToInit = 7,
+    LdrModulesInitializing = 8,
+    LdrModulesReadyToRun = 9
+} LDR_DDAG_STATE;
+
+typedef struct _LDRP_CSLIST
+{
+    PSINGLE_LIST_ENTRY Tail;
+} LDRP_CSLIST, * PLDRP_CSLIST;
+
+typedef struct _LDR_SERVICE_TAG_RECORD
+{
+    struct _LDR_SERVICE_TAG_RECORD* Next;
+    ULONG ServiceTag;
+} LDR_SERVICE_TAG_RECORD, * PLDR_SERVICE_TAG_RECORD;
+
+typedef struct _RTL_BALANCED_NODE
+{
     union
     {
-        LIST_ENTRY HashLinks;
+        struct _RTL_BALANCED_NODE* Children[2];
         struct
         {
-            void* SectionPointer;
-            unsigned long CheckSum;
+            struct _RTL_BALANCED_NODE* Left;
+            struct _RTL_BALANCED_NODE* Right;
         };
     };
     union
     {
-        unsigned long TimeDateStamp;
-        void* LoadedImports;
+        UCHAR Red : 1;
+        UCHAR Balance : 2;
+        ULONG_PTR ParentValue;
     };
+} RTL_BALANCED_NODE, * PRTL_BALANCED_NODE;
+
+typedef struct _RTL_RB_TREE {
+    PRTL_BALANCED_NODE Root;
+    PRTL_BALANCED_NODE Min;
+} RTL_RB_TREE, * PRTL_RB_TREE;
+
+typedef struct _LDR_DDAG_NODE
+{
+    LIST_ENTRY Modules;
+    PLDR_SERVICE_TAG_RECORD ServiceTagList;
+    ULONG LoadCount;
+    ULONG LoadWhileUnloadingCount;
+    ULONG LowestLink;
+    union
+    {
+        LDRP_CSLIST Dependencies;
+        SINGLE_LIST_ENTRY RemovalLink;
+    };
+    LDRP_CSLIST IncomingDependencies;
+    LDR_DDAG_STATE State;
+    SINGLE_LIST_ENTRY CondenseLink;
+    ULONG PreorderNumber;
+} LDR_DDAG_NODE, * PLDR_DDAG_NODE;
+
+typedef BOOLEAN(NTAPI* PLDR_INIT_ROUTINE)(
+    _In_ PVOID DllHandle,
+    _In_ ULONG Reason,
+    _In_opt_ PVOID Context
+    );
+typedef struct _LDR_DATA_TABLE_ENTRY
+{
+    LIST_ENTRY            InLoadOrderLinks;
+    LIST_ENTRY            InMemoryOrderLinks;
+    union
+    {
+        LIST_ENTRY InInitializationOrderLinks;
+        LIST_ENTRY InProgressLinks;
+    };
+    void* DllBase;
+    PLDR_INIT_ROUTINE* EntryPoint;
+    unsigned long        SizeOfImage;
+    UNICODE_STRING        FullDllName;
+    UNICODE_STRING        BaseDllName;
+    union
+    {
+        UCHAR FlagGroup[4];
+        ULONG Flags;
+        struct
+        {
+            ULONG PackagedBinary : 1;
+            ULONG MarkedForRemoval : 1;
+            ULONG ImageDll : 1;
+            ULONG LoadNotificationsSent : 1;
+            ULONG TelemetryEntryProcessed : 1;
+            ULONG ProcessStaticImport : 1;
+            ULONG InLegacyLists : 1;
+            ULONG InIndexes : 1;
+            ULONG ShimDll : 1;
+            ULONG InExceptionTable : 1;
+            ULONG ReservedFlags1 : 2;
+            ULONG LoadInProgress : 1;
+            ULONG LoadConfigProcessed : 1;
+            ULONG EntryProcessed : 1;
+            ULONG ProtectDelayLoad : 1;
+            ULONG ReservedFlags3 : 2;
+            ULONG DontCallForThreads : 1;
+            ULONG ProcessAttachCalled : 1;
+            ULONG ProcessAttachFailed : 1;
+            ULONG CorDeferredValidate : 1;
+            ULONG CorImage : 1;
+            ULONG DontRelocate : 1;
+            ULONG CorILOnly : 1;
+            ULONG ChpeImage : 1;
+            ULONG ReservedFlags5 : 2;
+            ULONG Redirected : 1;
+            ULONG ReservedFlags6 : 2;
+            ULONG CompatDatabaseProcessed : 1;
+        };
+    };
+    USHORT ObsoleteLoadCount;
+    unsigned short TlsIndex;
+    LIST_ENTRY HashLinks;
+    ULONG TimeDateStamp;
     struct _ACTIVATION_CONTEXT* EntryPointActivationContext;
-    void* PatchInformation;
-    LIST_ENTRY ForwarderLinks;
-    LIST_ENTRY ServiceTagLinks;
-    LIST_ENTRY StaticLinks;
+    PVOID Lock; // RtlAcquireSRWLockExclusive
+    PLDR_DDAG_NODE DdagNode;
+    LIST_ENTRY NodeModuleLink;
+    struct _LDRP_LOAD_CONTEXT* LoadContext;
+    PVOID ParentDllBase;
+    PVOID SwitchBackContext;
+    RTL_BALANCED_NODE BaseAddressIndexNode;
+    RTL_BALANCED_NODE MappingInfoIndexNode;
+    ULONG_PTR OriginalBase;
+    LARGE_INTEGER LoadTime;
+    ULONG BaseNameHashValue;
+    LDR_DLL_LOAD_REASON LoadReason;
+    ULONG ImplicitPathOptions;
+    ULONG ReferenceCount;
+    ULONG DependentLoadFlags;
+    UCHAR SigningLevel; // since REDSTONE2
 } LDR_DATA_TABLE_ENTRY, * PLDR_DATA_TABLE_ENTRY;
 
 typedef struct _PEB_LDR_DATA
@@ -1227,25 +1504,227 @@ typedef struct _FLOATING_SAVE_AREA {
 #define CONTEXT_EXCEPTION_REQUEST   0x40000000L
 #define CONTEXT_EXCEPTION_REPORTING 0x80000000L
 
+typedef struct _M128A {
+    ULONGLONG Low;
+    LONGLONG High;
+} M128A, *PM128A;
+typedef struct _XSAVE_FORMAT {
+    WORD   ControlWord;
+    WORD   StatusWord;
+    BYTE  TagWord;
+    BYTE  Reserved1;
+    WORD   ErrorOpcode;
+    DWORD ErrorOffset;
+    WORD   ErrorSelector;
+    WORD   Reserved2;
+    DWORD DataOffset;
+    WORD   DataSelector;
+    WORD   Reserved3;
+    DWORD MxCsr;
+    DWORD MxCsr_Mask;
+    M128A FloatRegisters[8];
+#if defined(_WIN64)
+
+    M128A XmmRegisters[16];
+    BYTE  Reserved4[96];
+
+#else
+    M128A XmmRegisters[8];
+    BYTE  Reserved4[224];
+#endif
+
+} XSAVE_FORMAT, * PXSAVE_FORMAT;
+typedef XSAVE_FORMAT XMM_SAVE_AREA32, * PXMM_SAVE_AREA32;
+
+#if defined(_WIN64)
 typedef struct _CONTEXT {
+
+    //
+    // Register parameter home addresses.
+    //
+    // N.B. These fields are for convience - they could be used to extend the
+    //      context record in the future.
+    //
+
+    DWORD64 P1Home;
+    DWORD64 P2Home;
+    DWORD64 P3Home;
+    DWORD64 P4Home;
+    DWORD64 P5Home;
+    DWORD64 P6Home;
+
+    //
+    // Control flags.
+    //
+
     DWORD ContextFlags;
+    DWORD MxCsr;
+
+    //
+    // Segment Registers and processor flags.
+    //
+
+    WORD   SegCs;
+    WORD   SegDs;
+    WORD   SegEs;
+    WORD   SegFs;
+    WORD   SegGs;
+    WORD   SegSs;
+    DWORD EFlags;
+
+    //
+    // Debug registers
+    //
+
+    DWORD64 Dr0;
+    DWORD64 Dr1;
+    DWORD64 Dr2;
+    DWORD64 Dr3;
+    DWORD64 Dr6;
+    DWORD64 Dr7;
+
+    //
+    // Integer registers.
+    //
+
+    DWORD64 Rax;
+    DWORD64 Rcx;
+    DWORD64 Rdx;
+    DWORD64 Rbx;
+    DWORD64 Rsp;
+    DWORD64 Rbp;
+    DWORD64 Rsi;
+    DWORD64 Rdi;
+    DWORD64 R8;
+    DWORD64 R9;
+    DWORD64 R10;
+    DWORD64 R11;
+    DWORD64 R12;
+    DWORD64 R13;
+    DWORD64 R14;
+    DWORD64 R15;
+
+    //
+    // Program counter.
+    //
+
+    DWORD64 Rip;
+
+    //
+    // Floating point state.
+    //
+
+    union {
+        XMM_SAVE_AREA32 FltSave;
+        struct {
+            M128A Header[2];
+            M128A Legacy[8];
+            M128A Xmm0;
+            M128A Xmm1;
+            M128A Xmm2;
+            M128A Xmm3;
+            M128A Xmm4;
+            M128A Xmm5;
+            M128A Xmm6;
+            M128A Xmm7;
+            M128A Xmm8;
+            M128A Xmm9;
+            M128A Xmm10;
+            M128A Xmm11;
+            M128A Xmm12;
+            M128A Xmm13;
+            M128A Xmm14;
+            M128A Xmm15;
+        };
+    };
+
+    //
+    // Vector registers.
+    //
+
+    M128A VectorRegister[26];
+    DWORD64 VectorControl;
+
+    //
+    // Special debug control registers.
+    //
+
+    DWORD64 DebugControl;
+    DWORD64 LastBranchToRip;
+    DWORD64 LastBranchFromRip;
+    DWORD64 LastExceptionToRip;
+    DWORD64 LastExceptionFromRip;
+} CONTEXT, * PCONTEXT;
+#else
+typedef struct _CONTEXT {
+
+    //
+    // The flags values within this flag control the contents of
+    // a CONTEXT record.
+    //
+    // If the context record is used as an input parameter, then
+    // for each portion of the context record controlled by a flag
+    // whose value is set, it is assumed that that portion of the
+    // context record contains valid context. If the context record
+    // is being used to modify a threads context, then only that
+    // portion of the threads context will be modified.
+    //
+    // If the context record is used as an IN OUT parameter to capture
+    // the context of a thread, then only those portions of the thread's
+    // context corresponding to set flags will be returned.
+    //
+    // The context record is never used as an OUT only parameter.
+    //
+
+    DWORD ContextFlags;
+
+    //
+    // This section is specified/returned if CONTEXT_DEBUG_REGISTERS is
+    // set in ContextFlags.  Note that CONTEXT_DEBUG_REGISTERS is NOT
+    // included in CONTEXT_FULL.
+    //
+
     DWORD   Dr0;
     DWORD   Dr1;
     DWORD   Dr2;
     DWORD   Dr3;
     DWORD   Dr6;
     DWORD   Dr7;
+
+    //
+    // This section is specified/returned if the
+    // ContextFlags word contians the flag CONTEXT_FLOATING_POINT.
+    //
+
     FLOATING_SAVE_AREA FloatSave;
+
+    //
+    // This section is specified/returned if the
+    // ContextFlags word contians the flag CONTEXT_SEGMENTS.
+    //
+
     DWORD   SegGs;
     DWORD   SegFs;
     DWORD   SegEs;
     DWORD   SegDs;
+
+    //
+    // This section is specified/returned if the
+    // ContextFlags word contians the flag CONTEXT_INTEGER.
+    //
+
     DWORD   Edi;
     DWORD   Esi;
     DWORD   Ebx;
     DWORD   Edx;
     DWORD   Ecx;
     DWORD   Eax;
+
+    //
+    // This section is specified/returned if the
+    // ContextFlags word contians the flag CONTEXT_CONTROL.
+    //
+
     DWORD   Ebp;
     DWORD   Eip;
     DWORD   SegCs;              // MUST BE SANITIZED
@@ -1253,8 +1732,17 @@ typedef struct _CONTEXT {
     DWORD   Esp;
     DWORD   SegSs;
 
+    //
+    // This section is specified/returned if the ContextFlags word
+    // contains the flag CONTEXT_EXTENDED_REGISTERS.
+    // The format and contexts are processor specific
+    //
+
     BYTE    ExtendedRegisters[MAXIMUM_SUPPORTED_EXTENSION];
-} CONTEXT, * PCONTEXT;
+
+} CONTEXT, *PCONTEXT;
+#endif
+
 struct _GDI_TEB_BATCH
 {
     ULONG Offset : 31;                                                        //0x0
@@ -1721,6 +2209,78 @@ typedef struct _IMAGE_ROM_HEADERS {
     IMAGE_ROM_OPTIONAL_HEADER OptionalHeader;
 } IMAGE_ROM_HEADERS, * PIMAGE_ROM_HEADERS;
 
+typedef struct _IMAGE_THUNK_DATA64 {
+    union {
+        ULONGLONG ForwarderString;  // PBYTE
+        ULONGLONG Function;         // PDWORD
+        ULONGLONG Ordinal;
+        ULONGLONG AddressOfData;    // PIMAGE_IMPORT_BY_NAME
+    } u1;
+} IMAGE_THUNK_DATA64;
+typedef IMAGE_THUNK_DATA64* PIMAGE_THUNK_DATA64;
+
+
+typedef struct _IMAGE_THUNK_DATA32 {
+    union {
+        DWORD ForwarderString;      // PBYTE
+        DWORD Function;             // PDWORD
+        DWORD Ordinal;
+        DWORD AddressOfData;        // PIMAGE_IMPORT_BY_NAME
+    } u1;
+} IMAGE_THUNK_DATA32, *PIMAGE_THUNK_DATA32;
+
+
+typedef VOID
+(NTAPI* PIMAGE_TLS_CALLBACK) (
+    PVOID DllHandle,
+    DWORD Reason,
+    PVOID Reserved
+    );
+
+typedef struct _IMAGE_TLS_DIRECTORY64 {
+    ULONGLONG StartAddressOfRawData;
+    ULONGLONG EndAddressOfRawData;
+    ULONGLONG AddressOfIndex;         // PDWORD
+    ULONGLONG AddressOfCallBacks;     // PIMAGE_TLS_CALLBACK *;
+    DWORD SizeOfZeroFill;
+    union {
+        DWORD Characteristics;
+        struct {
+            DWORD Reserved0 : 20;
+            DWORD Alignment : 4;
+            DWORD Reserved1 : 8;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME;
+
+} IMAGE_TLS_DIRECTORY64, *PIMAGE_TLS_DIRECTORY64;
+
+
+typedef struct _IMAGE_TLS_DIRECTORY32 {
+    DWORD   StartAddressOfRawData;
+    DWORD   EndAddressOfRawData;
+    DWORD   AddressOfIndex;             // PDWORD
+    DWORD   AddressOfCallBacks;         // PIMAGE_TLS_CALLBACK *
+    DWORD   SizeOfZeroFill;
+    union {
+        DWORD Characteristics;
+        struct {
+            DWORD Reserved0 : 20;
+            DWORD Alignment : 4;
+            DWORD Reserved1 : 8;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME;
+
+} IMAGE_TLS_DIRECTORY32, *PIMAGE_TLS_DIRECTORY32;
+
+
+#define IMAGE_ORDINAL_FLAG64 0x8000000000000000
+#define IMAGE_ORDINAL_FLAG32 0x80000000
+#define IMAGE_ORDINAL64(Ordinal) (Ordinal & 0xffff)
+#define IMAGE_ORDINAL32(Ordinal) (Ordinal & 0xffff)
+#define IMAGE_SNAP_BY_ORDINAL64(Ordinal) ((Ordinal & IMAGE_ORDINAL_FLAG64) != 0)
+#define IMAGE_SNAP_BY_ORDINAL32(Ordinal) ((Ordinal & IMAGE_ORDINAL_FLAG32) != 0)
+
+
 #define OBJ_INHERIT                             0x00000002L
 #define OBJ_PERMANENT                           0x00000010L
 #define OBJ_EXCLUSIVE                           0x00000020L
@@ -1748,6 +2308,30 @@ typedef struct _OBJECT_ATTRIBUTES {
     PVOID           SecurityQualityOfService;
 } OBJECT_ATTRIBUTES, * POBJECT_ATTRIBUTES;
 
+//
+// Directory format.
+//
+
+#define IMAGE_NUMBEROF_DIRECTORY_ENTRIES    16
+
+//
+// Optional header format.
+//
+
+#define IMAGE_NT_OPTIONAL_HDR32_MAGIC      0x10b
+#define IMAGE_NT_OPTIONAL_HDR64_MAGIC      0x20b
+#define IMAGE_ROM_OPTIONAL_HDR_MAGIC       0x107
+
+#ifdef _WIN64
+typedef IMAGE_OPTIONAL_HEADER64             IMAGE_OPTIONAL_HEADER;
+typedef PIMAGE_OPTIONAL_HEADER64            PIMAGE_OPTIONAL_HEADER;
+#define IMAGE_NT_OPTIONAL_HDR_MAGIC         IMAGE_NT_OPTIONAL_HDR64_MAGIC
+#else
+typedef IMAGE_OPTIONAL_HEADER32             IMAGE_OPTIONAL_HEADER;
+typedef PIMAGE_OPTIONAL_HEADER32            PIMAGE_OPTIONAL_HEADER;
+#define IMAGE_NT_OPTIONAL_HDR_MAGIC         IMAGE_NT_OPTIONAL_HDR32_MAGIC
+#endif
+
 #ifdef _WIN64
 typedef IMAGE_NT_HEADERS64                  IMAGE_NT_HEADERS;
 typedef PIMAGE_NT_HEADERS64                 PIMAGE_NT_HEADERS;
@@ -1756,6 +2340,23 @@ typedef IMAGE_NT_HEADERS32                  IMAGE_NT_HEADERS;
 typedef PIMAGE_NT_HEADERS32                 PIMAGE_NT_HEADERS;
 #endif
 
+#ifdef _WIN64
+#define IMAGE_ORDINAL_FLAG              IMAGE_ORDINAL_FLAG64
+#define IMAGE_ORDINAL(Ordinal)          IMAGE_ORDINAL64(Ordinal)
+typedef IMAGE_THUNK_DATA64              IMAGE_THUNK_DATA;
+typedef PIMAGE_THUNK_DATA64             PIMAGE_THUNK_DATA;
+#define IMAGE_SNAP_BY_ORDINAL(Ordinal)  IMAGE_SNAP_BY_ORDINAL64(Ordinal)
+typedef IMAGE_TLS_DIRECTORY64           IMAGE_TLS_DIRECTORY;
+typedef PIMAGE_TLS_DIRECTORY64          PIMAGE_TLS_DIRECTORY;
+#else
+#define IMAGE_ORDINAL_FLAG              IMAGE_ORDINAL_FLAG32
+#define IMAGE_ORDINAL(Ordinal)          IMAGE_ORDINAL32(Ordinal)
+typedef IMAGE_THUNK_DATA32              IMAGE_THUNK_DATA;
+typedef PIMAGE_THUNK_DATA32             PIMAGE_THUNK_DATA;
+#define IMAGE_SNAP_BY_ORDINAL(Ordinal)  IMAGE_SNAP_BY_ORDINAL32(Ordinal)
+typedef IMAGE_TLS_DIRECTORY32           IMAGE_TLS_DIRECTORY;
+typedef PIMAGE_TLS_DIRECTORY32          PIMAGE_TLS_DIRECTORY;
+#endif+
 // IMAGE_FIRST_SECTION doesn't need 32/64 versions since the file header is the same either way.
 
 #define IMAGE_FIRST_SECTION( ntheader ) ((PIMAGE_SECTION_HEADER)        \
@@ -1763,7 +2364,44 @@ typedef PIMAGE_NT_HEADERS32                 PIMAGE_NT_HEADERS;
      FIELD_OFFSET( IMAGE_NT_HEADERS, OptionalHeader ) +                 \
      ((ntheader))->FileHeader.SizeOfOptionalHeader   \
     ))
+//
+// Based relocation types.
+//
 
+#define IMAGE_REL_BASED_ABSOLUTE              0
+#define IMAGE_REL_BASED_HIGH                  1
+#define IMAGE_REL_BASED_LOW                   2
+#define IMAGE_REL_BASED_HIGHLOW               3
+#define IMAGE_REL_BASED_HIGHADJ               4
+#define IMAGE_REL_BASED_MACHINE_SPECIFIC_5    5
+#define IMAGE_REL_BASED_RESERVED              6
+#define IMAGE_REL_BASED_MACHINE_SPECIFIC_7    7
+#define IMAGE_REL_BASED_MACHINE_SPECIFIC_8    8
+#define IMAGE_REL_BASED_MACHINE_SPECIFIC_9    9
+#define IMAGE_REL_BASED_DIR64                 10
+typedef struct _IMAGE_BASE_RELOCATION {
+    DWORD   VirtualAddress;
+    DWORD   SizeOfBlock;
+} IMAGE_BASE_RELOCATION;
+typedef IMAGE_BASE_RELOCATION* PIMAGE_BASE_RELOCATION;
+
+typedef struct _IMAGE_SECTION_HEADER {
+    BYTE    Name[8];
+    union {
+        DWORD   PhysicalAddress;
+        DWORD   VirtualSize;
+    } Misc;
+    DWORD   VirtualAddress;
+    DWORD   SizeOfRawData;
+    DWORD   PointerToRawData;
+    DWORD   PointerToRelocations;
+    DWORD   PointerToLinenumbers;
+    WORD    NumberOfRelocations;
+    WORD    NumberOfLinenumbers;
+    DWORD   Characteristics;
+} IMAGE_SECTION_HEADER, * PIMAGE_SECTION_HEADER;
+
+#define IMAGE_SIZEOF_SECTION_HEADER          40
 typedef struct _IMAGE_EXPORT_DIRECTORY {
     DWORD   Characteristics;
     DWORD   TimeDateStamp;
@@ -2487,6 +3125,7 @@ typedef struct _KUSER_SHARED_DATA
     ULONG Spare;                                                            //0x72c
 } KUSER_SHARED_DATA, * PKUSER_SHARED_DATA;
 #define TU(c) (((c > 96) && (c < 123)) ? (c - 32) : (c))
+
 inline int stricmpA(const char* a, const char* b)
 {
     int r = 0;
@@ -2685,6 +3324,10 @@ inline void* memset(void* dst, int val, size_t len)
     return dst;
 }
 
+#pragma function(memcmp)
+
+extern void* memcpy(void* dst, void const* src, size_t len);
+
 #pragma function(strcpy)
 inline char* strcpy(char* dst, const char* src)
 {
@@ -2759,7 +3402,7 @@ typedef enum _OBJECT_INFORMATION_CLASS {
     ObjectDataInformation
 } OBJECT_INFORMATION_CLASS, * POBJECT_INFORMATION_CLASS;
 extern NTSTATUS NtClose(HANDLE Handle);
-
+extern NTSTATUS RtlHashUnicodeString(const UNICODE_STRING* String, BOOLEAN CaseInSensitive, ULONG HashAlgorithm, PULONG HashValue);
 extern NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString);
 
 extern NTSTATUS(NTAPI* NtWaitForSingleObject)(HANDLE hObject, BOOLEAN bAlertable, PLARGE_INTEGER Timeout);

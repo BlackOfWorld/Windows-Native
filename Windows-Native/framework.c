@@ -84,6 +84,41 @@ void cpu_detect_features(void)
 #undef SetFeature
 #endif
 
+NTSTATUS RtlHashUnicodeString(const UNICODE_STRING* String, BOOLEAN CaseInSensitive, ULONG HashAlgorithm, PULONG HashValue)
+{
+    if (String == NULL || HashValue == NULL) return STATUS_INVALID_PARAMETER;
+    switch (HashAlgorithm)
+    {
+    case 0:
+    case 1:
+        {
+            *HashValue = 0;
+            WCHAR* end = String->Buffer + (String->Length / sizeof(WCHAR));
+
+            if (CaseInSensitive)
+            {
+                for (WCHAR* c = String->Buffer; c != end; c++)
+                {
+                    *HashValue = ((65599 * (*HashValue)) +
+                        (ULONG)(((*c) >= L'a' && (*c) <= L'z') ?
+                                (*c) - L'a' + L'A' : (*c)));
+                }
+            }
+            else
+            {
+                for (WCHAR* c = String->Buffer; c != end; c++)
+                {
+                    *HashValue = ((65599 * (*HashValue)) + (ULONG)(*c));
+                }
+            }
+
+            return STATUS_SUCCESS;
+        }
+    default: break;
+    }
+    return STATUS_INVALID_PARAMETER;
+}
+
 NTSTATUS RtlInitUnicodeStringEx(PUNICODE_STRING DestinationString, PCWSTR SourceString)
 {
     const size_t MaxSize = (USHRT_MAX & ~1) - sizeof(WCHAR);
@@ -292,11 +327,13 @@ inline PPEB NtGetPeb(void)
 
 
 #pragma region Translation table
+#if !USE_ERRORS_FROM_NTDLL
 typedef struct _RUN_ENTRY {
     ULONG BaseCode;
     USHORT RunLength;
     USHORT CodeSize;
 } RUN_ENTRY, * PRUN_ENTRY;
+
 static const RUN_ENTRY RtlpRunTable[] = {
     {0x00000000, 0x0001, 0x0001},
     {0x00000103, 0x0001, 0x0001},
@@ -599,4 +636,5 @@ static const USHORT RtlpStatusTable[] = {
     0x19eb, 0x19ec, 0x19ed, 0x19ee, 0x19ef, 0x19f0, 0x19f1,
     0x19f2, 0x19f3, 0x19f4, 0x19f5, 0x19f6, 0x0037, 0x0037,
     0x0037, 0x0000, 0x0 };
+#endif
 #pragma endregion
